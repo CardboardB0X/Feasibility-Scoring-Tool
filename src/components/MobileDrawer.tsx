@@ -1,5 +1,6 @@
 import React from 'react';
 import { AuthSession } from '../types/auth';
+import { ActivePage } from '../types/navigation';
 import {
   X,
   User,
@@ -9,7 +10,7 @@ import {
   LogIn,
   LayoutGrid,
   Trophy,
-  FileText,
+  Play,
   Settings,
   Users,
   RotateCcw,
@@ -17,7 +18,7 @@ import {
   Lock,
   Copy,
   Check,
-  ArrowRight
+  Home
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -26,16 +27,12 @@ interface MobileDrawerProps {
   onClose: () => void;
   session: AuthSession | null;
   onOpenAuth: () => void;
-  onOpenProfile: () => void;
   onLogout: () => void;
   activeRoomCode: string | null;
   titleCount: number;
   researcherCount: number;
-  onOpenStartMenu: () => void;
-  onOpenLeaderboard: () => void;
-  onOpenAdviserReport: () => void;
-  onOpenTitleManager: () => void;
-  onOpenResearcherManager: () => void;
+  activePage: ActivePage;
+  onNavigate: (page: ActivePage) => void;
   onResetData: () => void;
   onExitRoom: () => void;
 }
@@ -45,16 +42,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   onClose,
   session,
   onOpenAuth,
-  onOpenProfile,
   onLogout,
   activeRoomCode,
   titleCount,
   researcherCount,
-  onOpenStartMenu,
-  onOpenLeaderboard,
-  onOpenAdviserReport,
-  onOpenTitleManager,
-  onOpenResearcherManager,
+  activePage,
+  onNavigate,
   onResetData,
   onExitRoom
 }) => {
@@ -70,9 +63,14 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
     }
   };
 
+  const handleNav = (page: ActivePage) => {
+    onNavigate(page);
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-in fade-in">
-      {/* Backdrop click area */}
+      {/* Backdrop */}
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Drawer panel */}
@@ -83,7 +81,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
             <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
             <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-            <span className="text-xs font-bold text-slate-700 ml-1">Menu & Account</span>
+            <span className="text-xs font-bold text-slate-700 ml-1">Menu & Navigation</span>
           </div>
 
           <button
@@ -124,14 +122,11 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
                 <div className="grid grid-cols-2 gap-2 pt-1 border-t border-black/[0.05]">
                   <button
-                    onClick={() => {
-                      onOpenProfile();
-                      onClose();
-                    }}
+                    onClick={() => handleNav('account')}
                     className="min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl bg-white border border-black/[0.08] text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
                   >
                     <User className="h-3.5 w-3.5 text-[#0071e3]" />
-                    <span>My Rooms</span>
+                    <span>My Profile</span>
                   </button>
 
                   <button
@@ -214,117 +209,149 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             </div>
           )}
 
-          {/* Navigation Items */}
+          {/* Main Pages Navigation */}
           <div className="space-y-1.5">
             <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-1">
-              Navigation & Reports
+              Pages
             </span>
 
             <button
-              onClick={() => {
-                onOpenStartMenu();
-                onClose();
-              }}
-              className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-[#1d1d1f] hover:bg-black/[0.04] transition-colors cursor-pointer text-left"
+              onClick={() => handleNav('home')}
+              className={clsx(
+                "w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left",
+                activePage === 'home'
+                  ? "bg-blue-50 text-[#0071e3] font-bold"
+                  : "text-[#1d1d1f] hover:bg-black/[0.04]"
+              )}
             >
-              <LayoutGrid className="h-4 w-4 text-[#0071e3]" />
+              <Home className="h-4 w-4" />
               <div className="flex-1">
-                <div className="font-bold">Start Menu Hub</div>
-                <div className="text-[10px] text-slate-500">Overview of all titles & evaluations</div>
+                <div>Homepage</div>
+                <div className="text-[10px] text-slate-400">Landing, new room, code join</div>
               </div>
             </button>
 
-            <button
-              onClick={() => {
-                onOpenLeaderboard();
-                onClose();
-              }}
-              className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-[#1d1d1f] hover:bg-black/[0.04] transition-colors cursor-pointer text-left"
-            >
-              <Trophy className="h-4 w-4 text-amber-500" />
-              <div className="flex-1">
-                <div className="font-bold">Compare Titles Matrix</div>
-                <div className="text-[10px] text-slate-500">Side-by-side CTS and meter comparison</div>
-              </div>
-            </button>
+            {activeRoomCode && (
+              <>
+                <button
+                  onClick={() => handleNav('dashboard')}
+                  className={clsx(
+                    "w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left",
+                    activePage === 'dashboard'
+                      ? "bg-blue-50 text-[#0071e3] font-bold"
+                      : "text-[#1d1d1f] hover:bg-black/[0.04]"
+                  )}
+                >
+                  <LayoutGrid className="h-4 w-4 text-[#0071e3]" />
+                  <div className="flex-1">
+                    <div>Dashboard</div>
+                    <div className="text-[10px] text-slate-400">Candidate titles & room overview</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleNav('questionnaire')}
+                  className={clsx(
+                    "w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left",
+                    activePage === 'questionnaire'
+                      ? "bg-blue-50 text-[#0071e3] font-bold"
+                      : "text-[#1d1d1f] hover:bg-black/[0.04]"
+                  )}
+                >
+                  <Play className="h-4 w-4 text-blue-600 fill-current" />
+                  <div className="flex-1">
+                    <div>Questionnaire</div>
+                    <div className="text-[10px] text-slate-400">Quizizz-style flashcard scoring</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleNav('results')}
+                  className={clsx(
+                    "w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left",
+                    activePage === 'results'
+                      ? "bg-blue-50 text-[#0071e3] font-bold"
+                      : "text-[#1d1d1f] hover:bg-black/[0.04]"
+                  )}
+                >
+                  <Trophy className="h-4 w-4 text-amber-500" />
+                  <div className="flex-1">
+                    <div>Results & Outcomes</div>
+                    <div className="text-[10px] text-slate-400">Scores, gauges, and comparison matrix</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleNav('edit')}
+                  className={clsx(
+                    "w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left",
+                    activePage === 'edit'
+                      ? "bg-blue-50 text-[#0071e3] font-bold"
+                      : "text-[#1d1d1f] hover:bg-black/[0.04]"
+                  )}
+                >
+                  <Settings className="h-4 w-4 text-slate-500" />
+                  <div className="flex-1">
+                    <div>Edit Titles & Team</div>
+                    <div className="text-[10px] text-slate-400">Configure titles and evaluators</div>
+                  </div>
+                </button>
+              </>
+            )}
 
             <button
-              onClick={() => {
-                onOpenAdviserReport();
-                onClose();
-              }}
-              className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-[#1d1d1f] hover:bg-black/[0.04] transition-colors cursor-pointer text-left"
+              onClick={() => handleNav('account')}
+              className={clsx(
+                "w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left",
+                activePage === 'account'
+                  ? "bg-blue-50 text-[#0071e3] font-bold"
+                  : "text-[#1d1d1f] hover:bg-black/[0.04]"
+              )}
             >
-              <FileText className="h-4 w-4 text-emerald-600" />
+              <User className="h-4 w-4 text-purple-600" />
               <div className="flex-1">
-                <div className="font-bold">Adviser Comprehensive Report</div>
-                <div className="text-[10px] text-slate-500">Defense pitch, risks, and committee summary</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => {
-                onOpenTitleManager();
-                onClose();
-              }}
-              className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-[#1d1d1f] hover:bg-black/[0.04] transition-colors cursor-pointer text-left"
-            >
-              <Settings className="h-4 w-4 text-slate-500" />
-              <div className="flex-1">
-                <div className="font-bold">Manage Titles</div>
-                <div className="text-[10px] text-slate-500">Edit titles, scopes, and domains</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => {
-                onOpenResearcherManager();
-                onClose();
-              }}
-              className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-[#1d1d1f] hover:bg-black/[0.04] transition-colors cursor-pointer text-left"
-            >
-              <Users className="h-4 w-4 text-purple-600" />
-              <div className="flex-1">
-                <div className="font-bold">Manage Evaluators</div>
-                <div className="text-[10px] text-slate-500">Add or switch research team members</div>
+                <div>Account Page</div>
+                <div className="text-[10px] text-slate-400">Profile, role, and saved rooms</div>
               </div>
             </button>
           </div>
 
           {/* Room Controls */}
-          <div className="space-y-1.5 pt-4 border-t border-black/[0.06]">
-            <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-1">
-              Room Controls
-            </span>
+          {activeRoomCode && (
+            <div className="space-y-1.5 pt-4 border-t border-black/[0.06]">
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-1">
+                Room Controls
+              </span>
 
-            <button
-              onClick={() => {
-                onExitRoom();
-                onClose();
-              }}
-              className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-left"
-            >
-              <DoorOpen className="h-4 w-4 text-slate-500" />
-              <div className="flex-1">
-                <div className="font-bold">Switch / Exit Room</div>
-                <div className="text-[10px] text-slate-500">Return to the start menu</div>
-              </div>
-            </button>
+              <button
+                onClick={() => {
+                  onExitRoom();
+                  onClose();
+                }}
+                className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-left"
+              >
+                <DoorOpen className="h-4 w-4 text-slate-500" />
+                <div className="flex-1">
+                  <div className="font-bold">Switch / Exit Room</div>
+                  <div className="text-[10px] text-slate-500">Return to Homepage</div>
+                </div>
+              </button>
 
-            <button
-              onClick={() => {
-                onResetData();
-                onClose();
-              }}
-              className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left"
-            >
-              <RotateCcw className="h-4 w-4 text-red-500" />
-              <div className="flex-1">
-                <div className="font-bold">Reset All to Blank</div>
-                <div className="text-[10px] text-red-400">Clear all evaluations and start clean</div>
-              </div>
-            </button>
-          </div>
+              <button
+                onClick={() => {
+                  onResetData();
+                  onClose();
+                }}
+                className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left"
+              >
+                <RotateCcw className="h-4 w-4 text-red-500" />
+                <div className="flex-1">
+                  <div className="font-bold">Reset All to Blank</div>
+                  <div className="text-[10px] text-red-400">Clear evaluations in this room</div>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

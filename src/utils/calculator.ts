@@ -280,3 +280,23 @@ function isCSVActiveScores(
   }
   return title.evaluations[activeResearcherId] || {};
 }
+
+/**
+ * Returns titles sorted by feasibility ranking (highest CTS first, disqualified last).
+ */
+export function getRankedTitles(
+  titles: CapstoneTitle[],
+  activeResearcherId: string,
+  researchers: Researcher[]
+): CapstoneTitle[] {
+  return [...titles].sort((a, b) => {
+    const summaryA = calculateTitleSummary(a, activeResearcherId, researchers);
+    const summaryB = calculateTitleSummary(b, activeResearcherId, researchers);
+
+    if (summaryA.isRedLineTriggered && !summaryB.isRedLineTriggered) return 1;
+    if (!summaryA.isRedLineTriggered && summaryB.isRedLineTriggered) return -1;
+
+    return summaryB.cts - summaryA.cts;
+  });
+}
+
