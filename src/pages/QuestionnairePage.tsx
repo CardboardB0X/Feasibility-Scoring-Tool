@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CapstoneTitle, Researcher, LikertPoint } from '../types/scoring';
 import { QUESTIONS } from '../data/rubric';
 import { QuestionFlashcard } from '../components/QuestionFlashcard';
+import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
   ArrowRight,
@@ -38,6 +39,7 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
   onSelectTitleToViewResults
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
 
@@ -54,10 +56,22 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
   const isAllAnswered = answeredCount === QUESTIONS.length;
   const progressPercent = Math.round((answeredCount / QUESTIONS.length) * 100);
 
+  // Trigger celebration confetti when opening completion modal
+  useEffect(() => {
+    if (isCompletionModalOpen) {
+      try {
+        confetti({
+          particleCount: 100,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      } catch (e) {}
+    }
+  }, [isCompletionModalOpen]);
+
   // Keyboard shortcut listener (1-5 for options, Left/Right arrow for nav)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is in an input or modal
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
@@ -67,12 +81,14 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
         handleScoreSelect(point);
       } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
         if (currentQuestionIndex < QUESTIONS.length - 1) {
+          setSlideDirection('next');
           setCurrentQuestionIndex((prev) => prev + 1);
         } else if (isAllAnswered) {
           setIsCompletionModalOpen(true);
         }
       } else if (e.key === 'ArrowLeft') {
         if (currentQuestionIndex > 0) {
+          setSlideDirection('prev');
           setCurrentQuestionIndex((prev) => prev - 1);
         }
       }
@@ -85,17 +101,35 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
   const handleScoreSelect = (point: LikertPoint) => {
     onScoreChange(currentQuestion.id, point);
 
-    // Smooth Quizizz auto-advance to next question if not at end
     if (currentQuestionIndex < QUESTIONS.length - 1) {
       setTimeout(() => {
+        setSlideDirection('next');
         setCurrentQuestionIndex((prev) => prev + 1);
-      }, 300);
+      }, 280);
     } else {
-      // If last question was just answered
       setTimeout(() => {
         setIsCompletionModalOpen(true);
-      }, 400);
+      }, 350);
     }
+  };
+
+  const goToNext = () => {
+    if (currentQuestionIndex < QUESTIONS.length - 1) {
+      setSlideDirection('next');
+      setCurrentQuestionIndex((prev) => prev + 1);
+    }
+  };
+
+  const goToPrev = () => {
+    if (currentQuestionIndex > 0) {
+      setSlideDirection('prev');
+      setCurrentQuestionIndex((prev) => prev - 1);
+    }
+  };
+
+  const jumpToQuestion = (index: number) => {
+    setSlideDirection(index >= currentQuestionIndex ? 'next' : 'prev');
+    setCurrentQuestionIndex(index);
   };
 
   const toggleFlag = (questionId: string) => {
@@ -109,6 +143,7 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
     setIsCompletionModalOpen(false);
     const nextIdx = (activeTitleIndex + 1) % titles.length;
     onSelectTitle(titles[nextIdx].id);
+    setSlideDirection('next');
     setCurrentQuestionIndex(0);
   };
 
@@ -185,7 +220,7 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
             return (
               <button
                 key={q.id}
-                onClick={() => setCurrentQuestionIndex(idx)}
+                onClick={() => jumpToQuestion(idx)}
                 title={`Jump to Q${idx + 1}: ${q.text.slice(0, 40)}...`}
                 className={clsx(
                   "relative flex-1 min-w-[28px] sm:min-w-[34px] h-8 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer flex items-center justify-center",
@@ -213,6 +248,7 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
         totalQuestions={QUESTIONS.length}
         currentScore={currentScores[currentQuestion.id]}
         isFlagged={flaggedQuestions[currentQuestion.id]}
+        direction={slideDirection}
         onSelectScore={handleScoreSelect}
         onToggleFlag={() => toggleFlag(currentQuestion.id)}
         readOnly={activeResearcherId === 'ALL_AGGREGATED'}
@@ -223,7 +259,7 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
         <button
           type="button"
           disabled={currentQuestionIndex === 0}
-          onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
+          onClick={goToPrev}
           className="min-h-[48px] px-5 flex items-center gap-2 rounded-2xl border border-black/[0.1] bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -243,7 +279,7 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
           <button
             type="button"
             disabled={currentQuestionIndex === QUESTIONS.length - 1}
-            onClick={() => setCurrentQuestionIndex((prev) => Math.min(QUESTIONS.length - 1, prev + 1))}
+            onClick={goToNext}
             className="min-h-[48px] px-6 flex items-center gap-2 rounded-2xl bg-[#0071e3] hover:bg-[#0077ed] text-xs font-bold text-white shadow-md shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <span>Next Question</span>

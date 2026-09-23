@@ -1,4 +1,4 @@
-// Vercel serverless function for encrypted room persistence
+// Vercel serverless function for encrypted user profile persistence
 interface IncomingMessage {
   method?: string;
   query: Record<string, string | string[]>;
@@ -12,7 +12,7 @@ interface ServerResponse {
   end(): void;
 }
 
-const memoryStore = new Map<string, { code: string; encryptedPayload: string; updatedAt: string }>();
+const memoryStore = new Map<string, { key: string; payload: string; updatedAt: string }>();
 const KV_BUCKET_ID = '6E3D8w8vW7Y2Z1p4N9qL5m';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
@@ -27,56 +27,51 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   if (req.method === 'GET') {
-    const code = req.query.code as string;
-    if (!code) {
-      res.status(400).json({ error: 'Room code required' });
+    const key = req.query.key as string;
+    if (!key) {
+      res.status(400).json({ error: 'User key required' });
       return;
     }
-    const normalized = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-    // 1. Check KVDB
+    // 1. Try KVDB
     try {
-      const kvRes = await fetch(`https://kvdb.io/${KV_BUCKET_ID}/room_${normalized}`);
+      const kvRes = await fetch(`https://kvdb.io/${KV_BUCKET_ID}/${key}`);
       if (kvRes.ok) {
         const text = await kvRes.text();
         if (text && text.trim().startsWith('{')) {
-          res.status(200).json({ code: normalized, encryptedPayload: text.trim() });
+          res.status(200).json({ key, payload: text.trim() });
           return;
         }
       }
     } catch (e) {}
 
-    // 2. Check in-memory store
-    const record = memoryStore.get(normalized);
+    // 2. Try in-memory store
+    const record = memoryStore.get(key);
     if (record) {
       res.status(200).json(record);
       return;
     }
 
-    res.status(404).json({ error: 'Room not found' });
+    res.status(404).json({ error: 'User record not found' });
     return;
   }
 
   if (req.method === 'POST') {
-    const { code, encryptedPayload } = req.body || {};
-    if (!code || !encryptedPayload) {
-      res.status(400).json({ error: 'Invalid payload: code and encryptedPayload required' });
+    const { key, payload } = req.body || {};
+    if (!key || !payload) {
+      res.status(400).json({ error: 'Invalid payload: key and payload required' });
       return;
     }
-    const normalized = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const record = {
-      code: normalized,
-      encryptedPayload,
-      updatedAt: new Date().toISOString()
-    };
-    memoryStore.set(normalized, record);
+
+    const record = { key, payload, updatedAt: new Date().toISOString() };
+    memoryStore.set(key, record);
 
     // Save to KVDB
     try {
-      await fetch(`https://kvdb.io/${KV_BUCKET_ID}/room_${normalized}`, {
+      await fetch(`https://kvdb.io/${KV_BUCKET_ID}/${key}`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: encryptedPayload
+        body: payload
       });
     } catch (e) {}
 

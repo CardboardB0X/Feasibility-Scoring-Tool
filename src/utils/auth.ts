@@ -1,16 +1,29 @@
 import { User, AuthSession, UserRole, UserRoomRecord } from '../types/auth';
+import { encryptUserData, decryptUserData } from './crypto';
+import { saveUserToDatabase, fetchUserFromDatabase } from './cloudDb';
 
 const STORAGE_USERS = 'capstone_auth_users_v1';
 const STORAGE_SESSION = 'capstone_auth_session_v1';
 const PASSWORD_SALT = 'capstone-auth-salt-v1:';
 
+function getCrypto(): SubtleCrypto {
+  if (typeof window !== 'undefined' && window.crypto?.subtle) {
+    return window.crypto.subtle;
+  }
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.subtle) {
+    return globalThis.crypto.subtle;
+  }
+  throw new Error('Web Crypto API is not available.');
+}
+
 /**
  * Hashes password using SHA-256 via Web Crypto API.
  */
 export async function hashPassword(password: string): Promise<string> {
+  const subtle = getCrypto();
   const encoder = new TextEncoder();
   const data = encoder.encode(PASSWORD_SALT + password);
-  const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+  const hashBuffer = await subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
@@ -45,7 +58,7 @@ const AVATAR_COLORS = [
 ];
 
 /**
- * Register a new user.
+ * Register a new user. Encrypts user profile and syncs to cloud database.
  */
 export async function registerUser(
   name: string,
@@ -86,6 +99,14 @@ export async function registerUser(
   users.push(newUser);
   saveAllUsers(users);
 
+  // Sync encrypted user record to cloud database
+  try {
+    const encrypted = await encryptUserData(newUser, trimmedEmail, passwordHash);
+    await saveUserToDatabase(trimmedEmail, encrypted);
+  } catch (e) {
+    console.warn('Could not sync user to cloud database', e);
+  }
+
   // Auto-login
   loginWithUser(newUser);
 
@@ -94,6 +115,7 @@ export async function registerUser(
 
 /**
  * Log in with email and password.
+ * Checks local cache first, then cloud database for multi-device login.
  */
 export async function loginUser(
   email: string,
@@ -101,13 +123,29 @@ export async function loginUser(
 ): Promise<{ success: boolean; session?: AuthSession; error?: string }> {
   const trimmedEmail = email.trim().toLowerCase();
   const users = getAllUsers();
-  const user = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+  let user = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+  const inputHash = await hashPassword(password);
+
+  // If user not in local storage, check cloud database
+  if (!user) {
+    try {
+      const encryptedCloud = await fetchUserFromDatabase(trimmedEmail);
+      if (encryptedCloud) {
+        user = await decryptUserData<User>(encryptedCloud, trimmedEmail, inputHash);
+        if (user) {
+          users.push(user);
+          saveAllUsers(users);
+        }
+      }
+    } catch (e) {
+      return { success: false, error: 'Incorrect password or unable to decrypt user account.' };
+    }
+  }
 
   if (!user) {
     return { success: false, error: 'No account found with this email address.' };
   }
 
-  const inputHash = await hashPassword(password);
   if (inputHash !== user.passwordHash) {
     return { success: false, error: 'Incorrect password. Please try again.' };
   }
@@ -166,12 +204,12 @@ export function logoutUser(): void {
 }
 
 /**
- * Saves a room association to the user's account history.
+ * Saves a room association to the user's account history and syncs to cloud.
  */
-export function addRoomToUserHistory(
+export async function addRoomToUserHistory(
   userId: string,
   roomRecord: UserRoomRecord
-): void {
+): Promise<void> {
   const users = getAllUsers();
   const user = users.find((u) => u.id === userId);
   if (!user) return;
@@ -181,6 +219,11 @@ export function addRoomToUserHistory(
   user.rooms = [roomRecord, ...filtered];
 
   saveAllUsers(users);
+
+  try {
+    const encrypted = await encryptUserData(user, user.email, user.passwordHash);
+    await saveUserToDatabase(user.email, encrypted);
+  } catch (e) {}
 }
 
 /**

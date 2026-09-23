@@ -10,6 +10,7 @@ import { getActiveSession, logoutUser, addRoomToUserHistory } from './utils/auth
 import { Navbar } from './components/Navbar';
 import { MobileDrawer } from './components/MobileDrawer';
 import { AuthModal } from './components/AuthModal';
+import { ToastNotification, ToastMessage } from './components/ToastNotification';
 
 import { HomePage } from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -25,6 +26,11 @@ export const App: React.FC = () => {
   const [session, setSession] = useState<AuthSession | null>(() => getActiveSession());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  const showToast = (type: 'success' | 'info' | 'error', message: string, title?: string) => {
+    setToast({ id: String(Date.now()), type, message, title });
+  };
 
   // Room state
   const [activeRoomCode, setActiveRoomCode] = useState<string | null>(() => {
@@ -134,6 +140,7 @@ export const App: React.FC = () => {
     // Initial sync
     syncRoomToCloud(roomCode, newTitles, [evaluator]);
     setActivePage('dashboard');
+    showToast('success', `Room ${roomCode} loaded with AES-256 cloud sync`, 'Room Connected');
   };
 
   // Exit Room back to HomePage
@@ -143,6 +150,7 @@ export const App: React.FC = () => {
       localStorage.removeItem(STORAGE_ACTIVE_ROOM);
       window.location.hash = '';
       setActivePage('home');
+      showToast('info', 'Exited evaluation room', 'Navigation');
     }
   };
 
@@ -153,7 +161,7 @@ export const App: React.FC = () => {
       const formattedCode = formatRoomCode(code);
       const encrypted = await fetchRoomFromCloud(formattedCode);
       if (!encrypted) {
-        alert(`Room "${formattedCode}" was not found.`);
+        showToast('error', `Room "${formattedCode}" not found on cloud database.`, 'Error');
         return;
       }
       interface DecryptedRoom {
@@ -179,10 +187,11 @@ export const App: React.FC = () => {
         setActiveTitleId(roomData.titles[0]?.id || 'TITLE-1');
         localStorage.setItem(STORAGE_ACTIVE_ROOM, formattedCode);
         setActivePage('dashboard');
+        showToast('success', `Resumed room ${formattedCode}`, 'Room Restored');
       }
     } catch (e) {
       console.error(e);
-      alert('Failed to load room from account.');
+      showToast('error', 'Failed to load room from account.', 'Error');
     } finally {
       setIsSyncing(false);
     }
@@ -191,6 +200,7 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     logoutUser();
     setSession(null);
+    showToast('info', 'You have been signed out.', 'Account');
   };
 
   // Score Change Handler for Questionnaire
@@ -248,6 +258,7 @@ export const App: React.FC = () => {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    showToast('success', 'Evaluations backup exported to JSON file', 'Export Complete');
   };
 
   // Import JSON backup
@@ -266,13 +277,13 @@ export const App: React.FC = () => {
           if (parsed.activeRoomCode) {
             setActiveRoomCode(parsed.activeRoomCode);
           }
-          alert('Evaluations imported successfully!');
+          showToast('success', 'Evaluations successfully imported!', 'Import Complete');
           setActivePage('dashboard');
         } else {
-          alert('Invalid JSON evaluation file.');
+          showToast('error', 'Invalid JSON evaluation file format.', 'Import Failed');
         }
       } catch (err) {
-        alert('Failed to parse JSON file.');
+        showToast('error', 'Failed to parse JSON file.', 'Import Failed');
       }
     };
     reader.readAsText(file);
@@ -288,6 +299,7 @@ export const App: React.FC = () => {
       setTitles(SAMPLE_BENCHMARK_TITLES);
       setActiveTitleId(SAMPLE_BENCHMARK_TITLES[0].id);
       setActivePage('dashboard');
+      showToast('success', '9 benchmark capstone titles loaded', 'Sample Loaded');
     }
   };
 
@@ -299,6 +311,7 @@ export const App: React.FC = () => {
         evaluations: {}
       }));
       setTitles(reset);
+      showToast('info', 'Evaluations reset to blank', 'Reset');
     }
   };
 
@@ -309,12 +322,12 @@ export const App: React.FC = () => {
     }
   }, [activeRoomCode]);
 
-  // Periodic auto-sync every 15 seconds if in a room
+  // Periodic auto-sync every 8 seconds if in a room
   useEffect(() => {
     if (!activeRoomCode) return;
     const interval = setInterval(() => {
       handleFetchLatest();
-    }, 15000);
+    }, 8000);
     return () => clearInterval(interval);
   }, [activeRoomCode]);
 
@@ -331,7 +344,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col selection:bg-[#0071e3] selection:text-white">
-      {/* Apple-style macOS Navigation Bar */}
+      {/* Apple-style macOS Navigation Bar with live cloud sync indicator */}
       <Navbar
         activePage={activePage}
         onNavigate={setActivePage}
@@ -503,8 +516,14 @@ export const App: React.FC = () => {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        onAuthSuccess={(newSession) => setSession(newSession)}
+        onAuthSuccess={(newSession) => {
+          setSession(newSession);
+          showToast('success', `Welcome back, ${newSession.user.name}!`, 'Signed In');
+        }}
       />
+
+      {/* Animated Action Toast */}
+      <ToastNotification toast={toast} onDismiss={() => setToast(null)} />
     </div>
   );
 };

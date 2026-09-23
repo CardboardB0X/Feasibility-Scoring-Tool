@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Question, LikertPoint } from '../types/scoring';
 import { MASTER_LIKERT_ANCHORS } from '../data/rubric';
 import { Check, Bookmark, Sparkles, AlertCircle } from 'lucide-react';
@@ -10,6 +10,7 @@ interface QuestionFlashcardProps {
   totalQuestions: number;
   currentScore?: LikertPoint;
   isFlagged?: boolean;
+  direction?: 'next' | 'prev';
   onSelectScore: (score: LikertPoint) => void;
   onToggleFlag?: () => void;
   readOnly?: boolean;
@@ -21,12 +22,28 @@ export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
   totalQuestions,
   currentScore,
   isFlagged = false,
+  direction = 'next',
   onSelectScore,
   onToggleFlag,
   readOnly = false
 }) => {
+  const [poppedPoint, setPoppedPoint] = useState<number | null>(null);
+
+  const handleChoiceClick = (point: LikertPoint) => {
+    if (readOnly) return;
+    setPoppedPoint(point);
+    setTimeout(() => setPoppedPoint(null), 300);
+    onSelectScore(point);
+  };
+
   return (
-    <div className="relative flex flex-col rounded-[32px] bg-white/95 backdrop-blur-2xl border border-black/[0.08] shadow-2xl p-6 sm:p-10 transition-all apple-spring max-w-3xl mx-auto w-full">
+    <div
+      key={`${question.id}-${currentIndex}`}
+      className={clsx(
+        "relative flex flex-col rounded-[32px] bg-white/95 backdrop-blur-2xl border border-black/[0.08] shadow-2xl p-6 sm:p-10 transition-all max-w-3xl mx-auto w-full",
+        direction === 'next' ? "animate-card-slide-right" : "animate-card-slide-left"
+      )}
+    >
       {/* Flashcard Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.06] pb-4 mb-6">
         <div className="flex items-center gap-2">
@@ -79,6 +96,7 @@ export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
       <div className="space-y-3">
         {question.options.map((opt) => {
           const isSelected = currentScore === opt.point;
+          const isPopped = poppedPoint === opt.point;
           const anchor = MASTER_LIKERT_ANCHORS.find((a) => a.point === opt.point);
 
           return (
@@ -86,9 +104,10 @@ export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
               key={opt.point}
               type="button"
               disabled={readOnly}
-              onClick={() => onSelectScore(opt.point)}
+              onClick={() => handleChoiceClick(opt.point)}
               className={clsx(
-                "group relative w-full text-left rounded-2xl p-4 sm:p-5 border-2 transition-all cursor-pointer flex items-center justify-between gap-4 active:scale-[0.99]",
+                "group relative w-full text-left rounded-2xl p-4 sm:p-5 border-2 transition-all cursor-pointer flex items-center justify-between gap-4 active:scale-[0.98]",
+                isPopped && "animate-option-pop",
                 isSelected
                   ? "border-[#0071e3] bg-gradient-to-r from-blue-50/90 to-blue-50/40 text-[#1d1d1f] shadow-md shadow-blue-500/10"
                   : "border-black/[0.07] bg-white hover:border-black/[0.18] hover:bg-[#fbfbfd]"
@@ -135,7 +154,7 @@ export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
                 className={clsx(
                   "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all",
                   isSelected
-                    ? "border-[#0071e3] bg-[#0071e3] text-white"
+                    ? "border-[#0071e3] bg-[#0071e3] text-white scale-105"
                     : "border-black/[0.15] bg-transparent opacity-0 group-hover:opacity-40"
                 )}
               >

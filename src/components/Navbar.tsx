@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { CapstoneTitle, Researcher } from '../types/scoring';
 import { AuthSession } from '../types/auth';
 import { ActivePage } from '../types/navigation';
+import { subscribeSyncStatus, CloudSyncStatus } from '../utils/cloudDb';
 import {
   Scale,
   LayoutGrid,
@@ -15,7 +16,10 @@ import {
   Download,
   Upload,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Cloud,
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -45,8 +49,21 @@ export const Navbar: React.FC<NavbarProps> = ({
   onImportJSON
 }) => {
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<CloudSyncStatus>({
+    state: 'idle',
+    lastSyncedAt: null,
+    message: 'Cloud DB Ready'
+  });
+
   const actionsRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeSyncStatus((status) => {
+      setSyncStatus(status);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -174,6 +191,30 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Action Buttons */}
         <div className="flex items-center gap-2">
+          {/* Live Cloud DB Sync Badge */}
+          <div
+            title={syncStatus.message || 'Encrypted Cloud Database Sync'}
+            className={clsx(
+              "hidden sm:flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all select-none",
+              syncStatus.state === 'syncing'
+                ? "bg-blue-50/80 border-blue-200 text-[#0071e3]"
+                : syncStatus.state === 'synced'
+                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                : "bg-black/[0.03] border-black/[0.06] text-slate-500"
+            )}
+          >
+            {syncStatus.state === 'syncing' ? (
+              <Loader2 className="h-3 w-3 animate-spin text-[#0071e3]" />
+            ) : syncStatus.state === 'synced' ? (
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            ) : (
+              <Cloud className="h-3 w-3 text-slate-400" />
+            )}
+            <span className="tracking-tight">
+              {syncStatus.state === 'syncing' ? 'Syncing...' : syncStatus.state === 'synced' ? 'Cloud Synced' : 'Cloud DB'}
+            </span>
+          </div>
+
           {/* User Account Pill / Button */}
           {session ? (
             <button
