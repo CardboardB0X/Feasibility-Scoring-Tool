@@ -101,11 +101,8 @@ export const AccountPage: React.FC<AccountPageProps> = ({
           </button>
 
           <h1 className="text-2xl sm:text-3xl font-black text-[#1d1d1f] tracking-tight">
-            Guest Profile & Session Settings
+            Profile
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
-            Persistent guest session. All evaluation responses and saved rooms are encrypted client-side.
-          </p>
         </div>
 
         {session && (
@@ -138,7 +135,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({
               {/* Avatar Color Picker */}
               <div className="space-y-2 flex-1">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Choose Avatar Theme Color:
+                  Avatar Color
                 </label>
                 <div className="flex flex-wrap items-center gap-2">
                   {AVATAR_COLORS.map((colorClass) => {
@@ -168,14 +165,14 @@ export const AccountPage: React.FC<AccountPageProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
               <div>
                 <label className="block text-xs font-bold text-[#1d1d1f] mb-1.5">
-                  Guest Nickname <span className="text-red-500">*</span>
+                  Nickname <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
-                    placeholder="Enter your evaluator nickname..."
+                    placeholder="Enter your nickname..."
                     className="w-full rounded-xl border border-black/[0.1] bg-[#fbfbfd] p-3 pl-9 text-sm font-semibold focus:bg-white focus:border-[#0071e3] focus:outline-none transition-all"
                   />
                   <User className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
@@ -184,7 +181,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-[#1d1d1f] mb-1.5">
-                  Your Role in Evaluation
+                  Role
                 </label>
                 <select
                   value={role}
@@ -206,12 +203,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-black/[0.05]">
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                <span>Session automatically saved to browser storage</span>
-              </div>
-
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-2 border-t border-black/[0.05]">
               <button
                 type="submit"
                 className={clsx(
@@ -224,12 +216,12 @@ export const AccountPage: React.FC<AccountPageProps> = ({
                 {saveSuccess ? (
                   <>
                     <Check className="h-4 w-4 stroke-[3]" />
-                    <span>Saved Successfully!</span>
+                    <span>Saved!</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4" />
-                    <span>Save Profile Changes</span>
+                    <span>Save Profile</span>
                   </>
                 )}
               </button>
@@ -241,7 +233,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({
         <div className="rounded-[28px] border border-black/[0.08] bg-white p-6 sm:p-8 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-extrabold text-[#1d1d1f] uppercase tracking-wider text-xs text-slate-400">
-              My Visited Evaluation Rooms ({userRooms.length})
+              Saved Evaluation Rooms ({userRooms.length})
             </h3>
             <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
               <Lock className="h-3 w-3 text-emerald-600" />

@@ -110,7 +110,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   className="w-full min-h-[40px] flex items-center justify-center gap-1.5 rounded-xl bg-white border border-black/[0.08] text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
                 >
                   <User className="h-3.5 w-3.5 text-[#0071e3]" />
-                  <span>Edit Nickname & Profile</span>
+                  <span>Profile</span>
                 </button>
               </div>
             ) : (
@@ -270,8 +270,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             >
               <User className="h-4 w-4 text-purple-600" />
               <div className="flex-1">
-                <div>Profile & Settings</div>
-                <div className="text-[10px] text-slate-400">Nickname, avatar, saved rooms</div>
+                <div>Profile</div>
               </div>
             </button>
           </div>

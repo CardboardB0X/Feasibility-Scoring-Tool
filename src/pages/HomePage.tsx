@@ -226,11 +226,6 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-20 px-4 sm:px-6">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-200/80 px-3.5 py-1 text-xs font-bold text-[#0071e3] mb-6 shadow-2xs">
-            <Lock className="h-3.5 w-3.5" />
-            <span>End-to-End Client-Side AES-256 Encrypted Evaluation</span>
-          </div>
-
           <h1 className="text-4xl sm:text-6xl font-black text-[#1d1d1f] tracking-tight leading-tight sm:leading-none">
             Evaluate Capstone Feasibility & Defensibility.
           </h1>
@@ -257,7 +252,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* Main Start Hub Card */}
       <section className="px-4 sm:px-6 max-w-3xl mx-auto w-full mb-16">
         <div className="rounded-[32px] bg-white/95 backdrop-blur-2xl border border-black/[0.08] shadow-2xl overflow-hidden apple-spring">
-          {/* Segmented Control: CREATE & JOIN ONLY */}
+          {/* Segmented Control: GENERATE CODE & JOIN ONLY */}
           <div className="p-4 sm:p-6 border-b border-black/[0.06] bg-[#fbfbfd]">
             <div className="flex p-1 rounded-2xl bg-black/[0.05] border border-black/[0.04] text-xs font-semibold w-full">
               <button
@@ -270,7 +265,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 )}
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Create Room</span>
+                <span>Generate Code</span>
               </button>
 
               <button
@@ -302,7 +297,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                         type="text"
                         value={evaluatorName}
                         onChange={(e) => setEvaluatorName(e.target.value)}
-                        placeholder="e.g. Alex (Lead Dev)"
+                        placeholder="e.g. Arvin (Lead Dev)"
                         className="w-full rounded-xl border border-black/[0.1] bg-[#fbfbfd] p-3 pl-9 text-base sm:text-sm font-semibold focus:bg-white focus:border-[#0071e3] focus:outline-none transition-all"
                       />
                       <User className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
@@ -388,7 +383,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0071e3] to-[#2563eb] py-3.5 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                 >
                   <ShieldCheck className="h-4 w-4" />
-                  <span>{isCreating ? 'Encrypting & Generating Code...' : 'Create Encrypted Evaluation Room'}</span>
+                  <span>{isCreating ? 'Generating Code...' : 'Generate Code'}</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -406,7 +401,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                       type="text"
                       value={joinName}
                       onChange={(e) => setJoinName(e.target.value)}
-                      placeholder="e.g. Maria (QA Specialist)"
+                      placeholder="e.g. Tristen (QA Specialist)"
                       className="w-full rounded-xl border border-black/[0.1] bg-[#fbfbfd] p-3 pl-9 text-base sm:text-sm font-semibold focus:bg-white focus:border-[#0071e3] focus:outline-none transition-all"
                     />
                     <User className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />

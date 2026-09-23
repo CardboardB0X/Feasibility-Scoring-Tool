@@ -58,18 +58,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => onNavigate('home')}
-            className="flex items-center gap-2 cursor-pointer group text-left"
+            title="Home"
+            className="flex items-center cursor-pointer group"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071e3] to-[#47a3ff] text-white shadow-sm group-hover:scale-105 transition-transform">
               <Scale className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="text-xs font-black text-[#1d1d1f] tracking-tight leading-tight">
-                Capstone Evaluator
-              </div>
-              <div className="text-[10px] font-semibold text-slate-400 leading-none">
-                18 Criteria Rubric
-              </div>
             </div>
           </button>
         </div>
@@ -164,7 +157,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div
             title={syncStatus.message || 'Encrypted Cloud Database Sync'}
             className={clsx(
-              "hidden sm:flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all select-none",
+              "hidden sm:flex items-center justify-center h-8 w-8 rounded-full border transition-all select-none",
               syncStatus.state === 'syncing'
                 ? "bg-blue-50/80 border-blue-200 text-[#0071e3]"
                 : syncStatus.state === 'synced'
@@ -173,22 +166,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           >
             {syncStatus.state === 'syncing' ? (
-              <Loader2 className="h-3 w-3 animate-spin text-[#0071e3]" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0071e3]" />
             ) : syncStatus.state === 'synced' ? (
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             ) : (
-              <Cloud className="h-3 w-3 text-slate-400" />
+              <Cloud className="h-3.5 w-3.5 text-slate-400" />
             )}
-            <span className="tracking-tight">
-              {syncStatus.state === 'syncing' ? 'Syncing...' : syncStatus.state === 'synced' ? 'Cloud Synced' : 'Cloud DB'}
-            </span>
           </div>
 
           {/* Guest Nickname Pill */}
           {session ? (
             <button
               onClick={() => onNavigate('account')}
-              title="Guest Profile & Settings"
+              title="Profile"
               className={clsx(
                 "flex items-center gap-2 rounded-2xl border px-3 py-1.5 transition-all cursor-pointer shadow-2xs hover:scale-[1.02] active:scale-[0.98]",
                 activePage === 'account'

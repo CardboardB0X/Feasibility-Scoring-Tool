@@ -52,9 +52,9 @@ try {
 assert(threwOnEmpty === true, 'Empty or whitespace nickname throws validation error');
 
 // Test 3: Save valid Guest Session
-const session1 = saveGuestSession('Maria Dev', 'Lead Researcher');
+const session1 = saveGuestSession('Tristen Dev', 'Lead Researcher');
 assert(session1 !== null, 'Valid nickname creates guest session');
-assert(session1.nickname === 'Maria Dev', 'Nickname stored accurately');
+assert(session1.nickname === 'Tristen Dev', 'Nickname stored accurately');
 assert(session1.role === 'Lead Researcher', 'Role stored accurately');
 assert(typeof session1.id === 'string' && session1.id.startsWith('GUEST-'), 'Guest ID generated with GUEST- prefix');
 assert(AVATAR_COLORS.includes(session1.avatarColor), 'Avatar color picked from valid AVATAR_COLORS');
@@ -62,11 +62,11 @@ assert(AVATAR_COLORS.includes(session1.avatarColor), 'Avatar color picked from v
 // Test 4: Persistent session recovery across reloads
 const restored = getGuestSession();
 assert(restored !== null, 'Session persists in localStorage');
-assert(restored?.nickname === 'Maria Dev', 'Persisted session nickname matches');
+assert(restored?.nickname === 'Tristen Dev', 'Persisted session nickname matches');
 assert(restored?.id === session1.id, 'Session ID is preserved across queries');
 
 // Test 5: Update session role and custom avatar color
-const updated = saveGuestSession('Maria Dev', 'Systems Analyst', 'bg-[#34c759]');
+const updated = saveGuestSession('Tristen Dev', 'Systems Analyst', 'bg-[#34c759]');
 assert(updated.id === session1.id, 'Updating profile maintains consistent Guest ID');
 assert(updated.role === 'Systems Analyst', 'Updated role persisted');
 assert(updated.avatarColor === 'bg-[#34c759]', 'Updated avatar color persisted');

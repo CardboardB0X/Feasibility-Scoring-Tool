@@ -179,7 +179,7 @@ export const ResearcherManagerModal: React.FC<ResearcherManagerModalProps> = ({
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Name (e.g. Maria Clara)"
+                placeholder="Name (e.g. Tristen)"
                 className="rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-[#0071e3]"
               />
               <input
