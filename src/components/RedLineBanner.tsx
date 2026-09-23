@@ -10,16 +10,16 @@ export const RedLineBanner: React.FC<RedLineBannerProps> = ({ violations }) => {
   if (!violations || violations.length === 0) return null;
 
   return (
-    <div className="mb-8 overflow-hidden rounded-2xl border-2 border-red-500/80 bg-gradient-to-br from-red-50 via-rose-50 to-orange-50 p-6 shadow-xl shadow-red-950/5 transition-all">
+    <div className="mb-8 overflow-hidden rounded-[26px] border border-red-500/40 bg-gradient-to-br from-red-50/90 via-rose-50/80 to-white/95 p-6 shadow-xl shadow-red-950/5 backdrop-blur-xl transition-all">
       <div className="flex flex-col gap-4 md:flex-row md:items-start">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-600/30 animate-pulse">
-          <AlertOctagon className="h-8 w-8" />
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#ff3b30] text-white shadow-md shadow-red-500/30 animate-pulse">
+          <AlertOctagon className="h-7 w-7" />
         </div>
 
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-xs font-black uppercase tracking-wider text-white shadow-sm">
-              <ShieldAlert className="h-3.5 w-3.5" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#ff3b30] px-3 py-0.5 text-[11px] font-black uppercase tracking-wider text-white shadow-2xs">
+              <ShieldAlert className="h-3 w-3" />
               The Red Line Triggered
             </span>
             <span className="text-xs font-bold text-red-900 uppercase tracking-wide">
@@ -31,7 +31,7 @@ export const RedLineBanner: React.FC<RedLineBannerProps> = ({ violations }) => {
             This Capstone Title Is Dropped Immediately
           </h3>
 
-          <p className="mt-1 text-sm text-red-800 leading-relaxed">
+          <p className="mt-1 text-xs sm:text-sm text-red-900/90 leading-relaxed">
             Per the research committee elimination rules: If any researcher selects score <strong>[1]</strong> on 
             <strong> Q1 (Programming Capability)</strong>, <strong>Q4 (Data Access)</strong>, or <strong>Q5 (Institutional/Legal Clearance)</strong>, 
             the project cannot be completed and must not be presented to the thesis panel.
@@ -41,10 +41,10 @@ export const RedLineBanner: React.FC<RedLineBannerProps> = ({ violations }) => {
             {violations.map((violation, idx) => (
               <div
                 key={idx}
-                className="flex items-start gap-3 rounded-xl border border-red-200 bg-white/90 p-3.5 shadow-xs backdrop-blur-sm"
+                className="flex items-start gap-3 rounded-2xl border border-red-200/90 bg-white/90 p-3.5 shadow-2xs"
               >
-                <AlertTriangle className="h-5 w-5 shrink-0 text-red-600 mt-0.5" />
-                <div className="text-sm">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-[#ff3b30] mt-0.5" />
+                <div className="text-xs sm:text-sm">
                   <span className="font-bold text-red-950">
                     {violation.questionId} (Score: {violation.point})
                     {violation.researcherName && ` • Evaluated by ${violation.researcherName}`}:
@@ -58,10 +58,10 @@ export const RedLineBanner: React.FC<RedLineBannerProps> = ({ violations }) => {
             ))}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 pt-2 text-xs font-semibold text-red-900">
+          <div className="mt-3.5 flex flex-wrap items-center gap-2 text-xs font-semibold text-red-900">
             <span className="flex items-center gap-1">
-              <ArrowRight className="h-3.5 w-3.5 text-red-600" />
-              Recommended action:
+              <ArrowRight className="h-3.5 w-3.5 text-[#ff3b30]" />
+              Action required:
             </span>
             <span>Switch to an approved finalist title or fundamentally redesign the project architecture.</span>
           </div>

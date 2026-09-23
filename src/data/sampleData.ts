@@ -6,7 +6,24 @@ export const DEFAULT_RESEARCHERS: Researcher[] = [
   { id: 'R3', name: 'QA & Docs (Researcher 3)', role: 'Testing & Empirical Validation', avatarColor: 'bg-purple-600' }
 ];
 
-export const INITIAL_TITLES: CapstoneTitle[] = [
+/**
+ * Clean, empty titles for researchers to input their own capstone titles and evaluate from scratch.
+ * Each title has 0 questions answered by default.
+ */
+export const EMPTY_DEFAULT_TITLES: CapstoneTitle[] = Array.from({ length: 9 }, (_, i) => ({
+  id: `TITLE-${i + 1}`,
+  title: `Proposed Capstone Title ${i + 1}`,
+  description: `Enter project scope, target domain, or technical objective for Title ${i + 1}.`,
+  category: `Domain ${i + 1}`,
+  createdAt: new Date().toISOString(),
+  evaluations: {}
+}));
+
+/**
+ * 9 Realistic benchmark sample titles with complete evaluations for demonstration purposes.
+ * Can be loaded on-demand anytime via the Start Menu or Actions menu.
+ */
+export const SAMPLE_BENCHMARK_TITLES: CapstoneTitle[] = [
   {
     id: 'TITLE-1',
     title: 'Automated Campus Waste Segregation & Telemetry using Edge Computer Vision',
@@ -162,11 +179,13 @@ export const INITIAL_TITLES: CapstoneTitle[] = [
   }
 ];
 
+// Helper to generate fresh blank titles
 export function getFreshEmptyTitles(): CapstoneTitle[] {
   return Array.from({ length: 9 }, (_, i) => ({
     id: `TITLE-${i + 1}`,
     title: `Proposed Capstone Title ${i + 1}`,
     description: `Enter project scope, target domain, or technical objective for Title ${i + 1}.`,
+    category: `Domain ${i + 1}`,
     createdAt: new Date().toISOString(),
     evaluations: {}
   }));

@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { CapstoneTitle, Researcher, LikertPoint } from './types/scoring';
 import { METERS, QUESTIONS, MASTER_LIKERT_ANCHORS } from './data/rubric';
-import { DEFAULT_RESEARCHERS, INITIAL_TITLES, getFreshEmptyTitles } from './data/sampleData';
+import { DEFAULT_RESEARCHERS, EMPTY_DEFAULT_TITLES, SAMPLE_BENCHMARK_TITLES, getFreshEmptyTitles } from './data/sampleData';
 import { calculateTitleSummary } from './utils/calculator';
 import { Navbar } from './components/Navbar';
 import { MeterSection } from './components/MeterSection';
 import { ScoreGauge } from './components/ScoreGauge';
 import { RedLineBanner } from './components/RedLineBanner';
+import { StartMenuModal } from './components/StartMenuModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { AdviserReportModal } from './components/AdviserReportModal';
 import { TitleManagerModal } from './components/TitleManagerModal';
 import { ResearcherManagerModal } from './components/ResearcherManagerModal';
-import { BookOpen, CheckCircle, ChevronDown, ChevronUp, Edit3, ShieldAlert, Sparkles, Layers } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, Edit3, Layers, LayoutGrid, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 
-const STORAGE_KEY_TITLES = 'capstone_eval_titles_v2';
-const STORAGE_KEY_RESEARCHERS = 'capstone_eval_researchers_v2';
-const STORAGE_KEY_ACTIVE_TITLE = 'capstone_eval_active_title_v2';
-const STORAGE_KEY_ACTIVE_RESEARCHER = 'capstone_eval_active_researcher_v2';
+// Storage keys - versioned to load empty titles cleanly by default
+const STORAGE_KEY_TITLES = 'capstone_eval_titles_v3_clean';
+const STORAGE_KEY_RESEARCHERS = 'capstone_eval_researchers_v3';
+const STORAGE_KEY_ACTIVE_TITLE = 'capstone_eval_active_title_v3';
+const STORAGE_KEY_ACTIVE_RESEARCHER = 'capstone_eval_active_researcher_v3';
+const STORAGE_KEY_HAS_SEEN_START = 'capstone_eval_has_seen_start_v3';
 
 export const App: React.FC = () => {
-  // Load persisted state or fallback
+  // Load persisted state or default to clean empty titles
   const [titles, setTitles] = useState<CapstoneTitle[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_TITLES);
@@ -28,7 +31,7 @@ export const App: React.FC = () => {
     } catch (e) {
       console.error('Failed to load saved titles', e);
     }
-    return INITIAL_TITLES;
+    return EMPTY_DEFAULT_TITLES;
   });
 
   const [researchers, setResearchers] = useState<Researcher[]>(() => {
@@ -57,7 +60,16 @@ export const App: React.FC = () => {
     return 'R1';
   });
 
-  // Modals state
+  // Start Menu & Modals state
+  const [isStartMenuOpen, setIsStartMenuOpen] = useState<boolean>(() => {
+    try {
+      const hasSeen = localStorage.getItem(STORAGE_KEY_HAS_SEEN_START);
+      return !hasSeen; // Show Start Menu on first visit
+    } catch (e) {
+      return true;
+    }
+  });
+
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isAdviserReportOpen, setIsAdviserReportOpen] = useState(false);
   const [isTitleManagerOpen, setIsTitleManagerOpen] = useState(false);
@@ -81,22 +93,26 @@ export const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEY_ACTIVE_RESEARCHER, activeResearcherId);
   }, [activeResearcherId]);
 
-  // Current title and evaluation summary
+  const handleCloseStartMenu = () => {
+    setIsStartMenuOpen(false);
+    localStorage.setItem(STORAGE_KEY_HAS_SEEN_START, 'true');
+  };
+
+  // Active Title and summary
   const activeTitle = titles.find((t) => t.id === activeTitleId) || titles[0];
   const activeTitleIndex = titles.findIndex((t) => t.id === activeTitleId);
 
   const summary = calculateTitleSummary(activeTitle, activeResearcherId, researchers);
 
-  // Active scores for current researcher
   const currentScores =
     activeResearcherId === 'ALL_AGGREGATED'
-      ? {} // In consensus mode, show averaged state or read-only
+      ? {}
       : activeTitle?.evaluations?.[activeResearcherId] || {};
 
   // Score Change Handler
   const handleScoreChange = (questionId: string, point: LikertPoint) => {
     if (activeResearcherId === 'ALL_AGGREGATED') {
-      alert('You are currently viewing Consolidated Group Consensus. Please switch to a specific researcher (e.g. Lead Dev) in the top bar to record individual scores.');
+      alert('You are currently viewing Consolidated Consensus. Please switch to a specific researcher (e.g. Lead Dev) in the top toolbar to record scores.');
       return;
     }
 
@@ -121,20 +137,22 @@ export const App: React.FC = () => {
     );
   };
 
-  // Actions
+  // Sample Data & Reset Handlers
   const handleLoadSampleData = () => {
-    if (confirm('Load 9 sample capstone titles with complete benchmark evaluations? This will overwrite existing draft entries.')) {
-      setTitles(INITIAL_TITLES);
-      setActiveTitleId(INITIAL_TITLES[0].id);
+    if (confirm('Load the 9 realistic benchmark sample titles with pre-evaluated scores? This is great for demonstration.')) {
+      setTitles(SAMPLE_BENCHMARK_TITLES);
+      setActiveTitleId(SAMPLE_BENCHMARK_TITLES[0].id);
       setActiveResearcherId('R1');
+      setIsStartMenuOpen(false);
     }
   };
 
   const handleResetData = () => {
-    if (confirm('Reset all titles and evaluations to blank templates?')) {
+    if (confirm('Clear all titles and evaluations back to empty templates?')) {
       const empty = getFreshEmptyTitles();
       setTitles(empty);
       setActiveTitleId(empty[0].id);
+      setIsStartMenuOpen(false);
     }
   };
 
@@ -165,7 +183,7 @@ export const App: React.FC = () => {
             setResearchers(parsed.researchers);
           }
           setActiveTitleId(parsed.titles[0]?.id || 'TITLE-1');
-          alert('Successfully imported capstone evaluations backup!');
+          alert('Successfully imported evaluations backup!');
         } else {
           alert('Invalid backup JSON format.');
         }
@@ -178,8 +196,8 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {/* Top Navigation */}
+    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col selection:bg-[#0071e3] selection:text-white">
+      {/* Apple-style macOS Navigation Bar */}
       <Navbar
         titles={titles}
         activeTitleId={activeTitleId}
@@ -187,6 +205,7 @@ export const App: React.FC = () => {
         researchers={researchers}
         activeResearcherId={activeResearcherId}
         onSelectResearcher={setActiveResearcherId}
+        onOpenStartMenu={() => setIsStartMenuOpen(true)}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenAdviserReport={() => setIsAdviserReportOpen(true)}
         onOpenTitleManager={() => setIsTitleManagerOpen(true)}
@@ -198,37 +217,37 @@ export const App: React.FC = () => {
       />
 
       {/* Main Container */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
-        {/* Current Active Title Hero Banner */}
-        <div className="mb-8 rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 shadow-xs">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+        {/* Active Title Hero Banner */}
+        <div className="mb-6 rounded-[28px] border border-black/[0.07] bg-white/95 backdrop-blur-xl p-6 md:p-8 shadow-xs apple-spring">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-black/[0.05] pb-5">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="rounded-lg bg-blue-100 px-2.5 py-0.5 font-mono text-xs font-black text-blue-900">
+                <span className="rounded-lg bg-black/[0.05] px-2.5 py-0.5 font-mono text-xs font-bold text-slate-700">
                   TITLE #{activeTitleIndex + 1} OF {titles.length}
                 </span>
                 {activeTitle.category && (
-                  <span className="rounded-lg bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700">
+                  <span className="rounded-lg bg-blue-50 border border-blue-200/60 px-2.5 py-0.5 text-xs font-semibold text-[#0071e3]">
                     {activeTitle.category}
                   </span>
                 )}
                 {activeResearcherId === 'ALL_AGGREGATED' ? (
-                  <span className="rounded-lg bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-900 flex items-center gap-1">
-                    👥 Group Consensus View
+                  <span className="rounded-lg bg-purple-50 border border-purple-200/60 px-2.5 py-0.5 text-xs font-semibold text-purple-800">
+                    👥 Consolidated Group Consensus
                   </span>
                 ) : (
-                  <span className="rounded-lg bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-900">
-                    Evaluating as: {researchers.find(r => r.id === activeResearcherId)?.name}
+                  <span className="rounded-lg bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                    Evaluator: {researchers.find(r => r.id === activeResearcherId)?.name}
                   </span>
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-snug">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight leading-snug">
                 {activeTitle.title}
               </h1>
 
               {activeTitle.description && (
-                <p className="mt-2 text-sm text-slate-600 max-w-3xl leading-relaxed">
+                <p className="mt-1.5 text-sm text-slate-600 max-w-3xl leading-relaxed">
                   {activeTitle.description}
                 </p>
               )}
@@ -237,18 +256,18 @@ export const App: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
               <button
                 onClick={() => setIsTitleManagerOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-2xl border border-black/[0.08] bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer"
               >
-                <Edit3 className="h-3.5 w-3.5 text-slate-500" />
-                <span>Edit Title Details</span>
+                <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                <span>Rename / Edit Title</span>
               </button>
             </div>
           </div>
 
-          {/* Quick Pagination / Title Tabs */}
+          {/* Quick Title Tabs */}
           <div className="mt-4 flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
             <span className="font-bold text-slate-400 mr-1 text-[11px] uppercase tracking-wider">
-              Quick Jump:
+              Titles:
             </span>
             {titles.map((t, idx) => {
               const isActive = t.id === activeTitleId;
@@ -259,17 +278,19 @@ export const App: React.FC = () => {
                   key={t.id}
                   onClick={() => setActiveTitleId(t.id)}
                   className={clsx(
-                    "flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 font-bold transition-all cursor-pointer",
+                    "flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 font-semibold transition-all cursor-pointer",
                     isActive
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      ? "bg-[#0071e3] text-white shadow-xs"
+                      : "bg-black/[0.04] text-slate-600 hover:bg-black/[0.08]"
                   )}
                 >
                   <span>Title {idx + 1}</span>
                   {tSummary.isRedLineTriggered ? (
                     <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" title="Red Line Disqualified" />
-                  ) : tSummary.verdict === 'Approved Finalist' ? (
+                  ) : tSummary.verdict === 'Approved Finalist' && tSummary.isComplete ? (
                     <span className="h-2 w-2 rounded-full bg-emerald-400" title="Approved Finalist" />
+                  ) : tSummary.answeredCount > 0 ? (
+                    <span className="text-[10px] opacity-75 font-mono">({tSummary.answeredCount})</span>
                   ) : null}
                 </button>
               );
@@ -277,34 +298,34 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Red Line Alert Banner (if Q1, Q4, or Q5 has score 1) */}
+        {/* Red Line Alert Banner */}
         <RedLineBanner violations={summary.redLineViolations} />
 
         {/* Master Likert Scale Anchor Reference (collapsible) */}
-        <div className="mb-8 rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-50/70 to-indigo-50/50 p-4 shadow-2xs">
+        <div className="mb-6 rounded-2xl border border-black/[0.06] bg-white/80 p-4 shadow-2xs backdrop-blur-md">
           <button
             onClick={() => setShowAnchorGuide(!showAnchorGuide)}
-            className="flex w-full items-center justify-between text-left text-xs font-bold text-blue-950 cursor-pointer"
+            className="flex w-full items-center justify-between text-left text-xs font-semibold text-slate-800 cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-blue-600" />
-              <span>Master Scoring Scale Likert Anchors Reference</span>
-              <span className="text-[11px] font-normal text-blue-800 hidden sm:inline">
-                (Standard 1 to 5 points defined scale)
+              <BookOpen className="h-4 w-4 text-[#0071e3]" />
+              <span className="font-bold">Master Scoring Scale Likert Anchors Reference</span>
+              <span className="text-slate-400 hidden sm:inline">
+                (Standard 1 to 5 defined points)
               </span>
             </div>
-            <div className="flex items-center gap-1 text-blue-700 text-xs">
-              <span>{showAnchorGuide ? 'Hide' : 'Show Anchors'}</span>
+            <div className="flex items-center gap-1 text-[#0071e3] text-xs font-medium">
+              <span>{showAnchorGuide ? 'Hide Anchors' : 'Show Anchors'}</span>
               {showAnchorGuide ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </div>
           </button>
 
           {showAnchorGuide && (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 pt-3 border-t border-blue-200/60 animate-in fade-in">
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 pt-3 border-t border-black/[0.05] animate-in fade-in">
               {MASTER_LIKERT_ANCHORS.map((anchor) => (
-                <div key={anchor.point} className="rounded-xl border border-blue-200 bg-white/90 p-3 text-xs">
-                  <div className="font-extrabold text-blue-900">{anchor.label}</div>
-                  <div className="mt-0.5 text-slate-600 font-medium">{anchor.note}</div>
+                <div key={anchor.point} className="rounded-xl border border-black/[0.04] bg-[#fbfbfd] p-3 text-xs">
+                  <div className="font-bold text-[#1d1d1f]">{anchor.label}</div>
+                  <div className="mt-0.5 text-slate-500 text-[11px] leading-snug">{anchor.note}</div>
                 </div>
               ))}
             </div>
@@ -312,8 +333,8 @@ export const App: React.FC = () => {
         </div>
 
         {/* Evaluation Layout: 18 Questions (Left) + Score Gauge (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Questions Column (8 cols on large screens) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Questions Column */}
           <div className="lg:col-span-8 space-y-2">
             {METERS.map((meter) => {
               const meterQuestions = QUESTIONS.filter((q) => q.meterId === meter.id);
@@ -333,32 +354,32 @@ export const App: React.FC = () => {
             })}
           </div>
 
-          {/* Sticky Score Gauge Sidebar (4 cols on large screens) */}
+          {/* Sticky Score Gauge Sidebar */}
           <div className="lg:col-span-4">
             <ScoreGauge summary={summary} />
 
-            {/* Quick Helper / Info Card */}
-            <div className="mt-6 rounded-3xl border border-slate-200/90 bg-white p-6 text-xs text-slate-600 shadow-xs">
-              <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px] mb-2 flex items-center gap-1.5">
-                <Layers className="h-3.5 w-3.5 text-blue-600" />
+            {/* Quick Rules Card */}
+            <div className="mt-5 rounded-[26px] border border-black/[0.07] bg-white/95 backdrop-blur-xl p-5 text-xs text-slate-600 shadow-xs">
+              <h4 className="font-bold text-[#1d1d1f] uppercase tracking-wider text-[11px] mb-2 flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5 text-[#0071e3]" />
                 Adviser Presentation Rules
               </h4>
-              <ul className="space-y-2 text-slate-600 leading-relaxed">
+              <ul className="space-y-2 text-slate-600 leading-relaxed text-[11px]">
                 <li className="flex items-start gap-1.5">
-                  <span className="font-bold text-emerald-600 shrink-0">≥ 4.00 CTS:</span>
-                  <span><strong>Approved Finalist</strong>. Submit directly to panel chair.</span>
+                  <span className="font-bold text-[#34c759] shrink-0">≥ 4.00 CTS:</span>
+                  <span><strong>Approved Finalist</strong>. Recommended for formal title submission.</span>
                 </li>
                 <li className="flex items-start gap-1.5">
-                  <span className="font-bold text-amber-600 shrink-0">3.30–3.99 CTS:</span>
+                  <span className="font-bold text-[#ff9500] shrink-0">3.30–3.99 CTS:</span>
                   <span><strong>Conditional Backup</strong>. Requires cutting high-friction modules.</span>
                 </li>
                 <li className="flex items-start gap-1.5">
-                  <span className="font-bold text-rose-600 shrink-0">&lt; 3.30 CTS:</span>
+                  <span className="font-bold text-slate-500 shrink-0">&lt; 3.30 CTS:</span>
                   <span><strong>Discarded</strong>. Not technically defensible.</span>
                 </li>
-                <li className="flex items-start gap-1.5 pt-1 border-t border-slate-100">
-                  <span className="font-bold text-red-600 shrink-0">Red Line:</span>
-                  <span>Score 1 on Q1, Q4, or Q5 drops the title instantly regardless of CTS!</span>
+                <li className="flex items-start gap-1.5 pt-1.5 border-t border-black/[0.05]">
+                  <span className="font-bold text-[#ff3b30] shrink-0">The Red Line:</span>
+                  <span>Score 1 on Q1, Q4, or Q5 drops the title immediately regardless of CTS!</span>
                 </li>
               </ul>
             </div>
@@ -367,25 +388,43 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
-        <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <footer className="border-t border-black/[0.06] bg-white py-5 text-center text-xs text-slate-400">
+        <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div>
-            Capstone Title Feasibility Evaluator • Standard Likert 18-Question Closed-Choice System
+            Capstone Title Feasibility Evaluator • Apple-Style 18-Question Rubric
           </div>
-          <div className="flex items-center gap-4 text-slate-400">
-            <span>Formula: CTS = Σ (M_i × Weight)</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsStartMenuOpen(true)}
+              className="text-[#0071e3] hover:underline font-medium cursor-pointer"
+            >
+              Open Start Menu
+            </button>
             <span>•</span>
             <button
               onClick={() => setIsLeaderboardOpen(true)}
-              className="text-blue-600 hover:underline font-semibold cursor-pointer"
+              className="text-[#0071e3] hover:underline font-medium cursor-pointer"
             >
-              Compare All Titles
+              Compare Titles Matrix
             </button>
           </div>
         </div>
       </footer>
 
-      {/* Modals */}
+      {/* Start Menu / Launchpad Modal */}
+      <StartMenuModal
+        isOpen={isStartMenuOpen}
+        onClose={handleCloseStartMenu}
+        titles={titles}
+        activeResearcherId={activeResearcherId}
+        researchers={researchers}
+        onSelectTitle={setActiveTitleId}
+        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        onOpenResearcherManager={() => setIsResearcherManagerOpen(true)}
+        onLoadSampleData={handleLoadSampleData}
+      />
+
+      {/* Leaderboard Modal */}
       <LeaderboardModal
         isOpen={isLeaderboardOpen}
         onClose={() => setIsLeaderboardOpen(false)}
@@ -395,6 +434,7 @@ export const App: React.FC = () => {
         onSelectTitle={setActiveTitleId}
       />
 
+      {/* Adviser Report Modal */}
       <AdviserReportModal
         isOpen={isAdviserReportOpen}
         onClose={() => setIsAdviserReportOpen(false)}
@@ -404,6 +444,7 @@ export const App: React.FC = () => {
         activeResearcherId={activeResearcherId}
       />
 
+      {/* Title Manager Modal */}
       <TitleManagerModal
         isOpen={isTitleManagerOpen}
         onClose={() => setIsTitleManagerOpen(false)}
@@ -413,6 +454,7 @@ export const App: React.FC = () => {
         onSelectTitle={setActiveTitleId}
       />
 
+      {/* Researcher Manager Modal */}
       <ResearcherManagerModal
         isOpen={isResearcherManagerOpen}
         onClose={() => setIsResearcherManagerOpen(false)}

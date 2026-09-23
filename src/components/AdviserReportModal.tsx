@@ -39,13 +39,22 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
       : researchers.find((r) => r.id === activeResearcherId)?.name || 'Lead Researcher';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in overflow-y-auto">
-      <div className="relative my-8 flex flex-col w-full max-w-4xl rounded-3xl bg-white shadow-2xl overflow-hidden border border-slate-200">
-        {/* Actions bar (hidden during print) */}
-        <div className="no-print flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-md animate-in fade-in overflow-y-auto">
+      <div className="relative my-8 flex flex-col w-full max-w-4xl rounded-[28px] bg-white shadow-2xl overflow-hidden border border-black/[0.08] apple-spring">
+        {/* macOS Window Chrome Header (hidden in print) */}
+        <div className="no-print flex items-center justify-between border-b border-black/[0.06] bg-[#fbfbfd]/90 px-6 py-3.5 select-none">
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            <span className="font-bold text-slate-800 text-sm">
+            <button
+              onClick={onClose}
+              className="h-3 w-3 rounded-full bg-[#ff5f57] border border-[#e0443e] hover:opacity-80 transition-opacity cursor-pointer"
+            />
+            <div className="h-3 w-3 rounded-full bg-[#febc2e] border border-[#d89e24]" />
+            <div className="h-3 w-3 rounded-full bg-[#28c840] border border-[#1aab29]" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-[#0071e3]" />
+            <span className="font-semibold text-slate-700 text-xs">
               Adviser Presentation & Defense Report
             </span>
           </div>
@@ -53,25 +62,25 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-[#0071e3] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#0077ed] active:scale-[0.98] transition-all shadow-xs cursor-pointer"
             >
-              <Printer className="h-4 w-4" />
+              <Printer className="h-3.5 w-3.5" />
               <span>Print / Save as PDF</span>
             </button>
             <button
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-black/5 hover:text-slate-700 transition-colors cursor-pointer"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
 
         {/* Printable Report Content */}
-        <div className="p-8 md:p-12 text-slate-900 bg-white" id="printable-adviser-report">
+        <div className="p-8 md:p-12 text-[#1d1d1f] bg-white" id="printable-adviser-report">
           {/* Institutional Header */}
           <div className="border-b-2 border-slate-900 pb-6 text-center">
-            <div className="text-xs font-black tracking-widest text-slate-500 uppercase">
+            <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
               Academic Capstone Feasibility & Defensibility Assessment
             </div>
             <h1 className="mt-2 text-2xl font-black text-slate-950 tracking-tight sm:text-3xl">
@@ -83,21 +92,21 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
           </div>
 
           {/* Title Info Section */}
-          <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
-            <div className="text-xs font-black uppercase tracking-wider text-slate-500">
+          <div className="mt-8 rounded-2xl border border-black/[0.08] bg-slate-50/50 p-6">
+            <div className="text-xs font-black uppercase tracking-wider text-slate-400">
               Proposed Capstone Title:
             </div>
-            <h2 className="mt-1 text-xl font-black text-slate-950 leading-snug">
+            <h2 className="mt-1 text-xl font-extrabold text-slate-950 leading-snug">
               {title.title}
             </h2>
             {title.description && (
-              <p className="mt-2 text-sm text-slate-700 leading-relaxed">
+              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
                 {title.description}
               </p>
             )}
             {title.category && (
               <div className="mt-3">
-                <span className="inline-block rounded-md bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-900">
+                <span className="inline-block rounded-md bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-bold text-[#0071e3]">
                   Domain: {title.category}
                 </span>
               </div>
@@ -106,18 +115,18 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
 
           {/* Assessment Verdict & CTS Hero */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-slate-200 p-6 flex flex-col justify-between">
+            <div className="rounded-2xl border border-black/[0.08] p-6 flex flex-col justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Overall Composite Score (CTS)
                 </span>
-                <div className="mt-1 text-4xl font-black text-slate-950 font-mono flex items-baseline gap-2">
+                <div className="mt-1 text-4xl font-extrabold text-[#1d1d1f] font-mono flex items-baseline gap-2">
                   {summary.cts.toFixed(2)}
-                  <span className="text-sm font-normal text-slate-500">/ 5.00</span>
+                  <span className="text-sm font-normal text-slate-400">/ 5.00</span>
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-600">
+              <div className="mt-4 pt-3 border-t border-black/[0.06] text-xs text-slate-500">
                 Formula: CTS = (M₁×0.2) + (M₂×0.2) + (M₃×0.2) + (M₄×0.15) + (M₅×0.15) + (M₆×0.10)
               </div>
             </div>
@@ -133,7 +142,7 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
                 : "border-slate-300 bg-slate-50"
             )}>
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Adviser Committee Verdict
                 </span>
                 <div className="mt-1 text-2xl font-black">
@@ -153,7 +162,7 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
                       Conditional Backup
                     </span>
                   ) : (
-                    <span className="text-rose-800">Discarded</span>
+                    <span className="text-slate-700">Discarded</span>
                   )}
                 </div>
               </div>
@@ -173,13 +182,13 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
           {/* Red Line Log if any */}
           {summary.isRedLineTriggered && (
             <div className="mt-6 rounded-2xl border-2 border-red-500 bg-red-50 p-6">
-              <h3 className="text-sm font-black uppercase text-red-950 tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-black uppercase text-red-950 tracking-wider flex items-center gap-1.5">
                 <ShieldAlert className="h-4 w-4 text-red-600" />
                 Red Line Disqualification Audit
               </h3>
               <div className="mt-2 space-y-2">
                 {summary.redLineViolations.map((v, i) => (
-                  <div key={i} className="text-xs text-red-900 bg-white/80 p-3 rounded-lg border border-red-200">
+                  <div key={i} className="text-xs text-red-900 bg-white/80 p-3 rounded-xl border border-red-200">
                     <span className="font-bold">{v.questionId} (Score: 1):</span> {v.blockerReason}
                     <div className="text-[11px] text-slate-500 mt-1 italic">"{v.questionText}"</div>
                   </div>
@@ -190,13 +199,13 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
 
           {/* Meter Breakdown Table */}
           <div className="mt-8">
-            <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 mb-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 mb-3">
               Summary of 6 Evaluation Meters
             </h3>
-            <div className="overflow-hidden rounded-2xl border border-slate-200">
+            <div className="overflow-hidden rounded-2xl border border-black/[0.08]">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                  <tr className="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[10px] border-b border-black/[0.08]">
                     <th className="py-2.5 px-4">Evaluation Meter</th>
                     <th className="py-2.5 px-3 text-center">Weight</th>
                     <th className="py-2.5 px-3 text-center">Average Score</th>
@@ -204,7 +213,7 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
                     <th className="py-2.5 px-4">Defensibility Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-black/[0.05]">
                   {summary.meterScores.map((m) => (
                     <tr key={m.meterId} className="hover:bg-slate-50/60">
                       <td className="py-3 px-4 font-bold text-slate-900">
@@ -239,7 +248,7 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
 
           {/* Signatures Section */}
           <div className="mt-16 pt-8 border-t-2 border-slate-300">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-8 text-center">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8 text-center">
               Formal Endorsement & Committee Sign-Off
             </div>
 
@@ -268,14 +277,14 @@ export const AdviserReportModal: React.FC<AdviserReportModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Footer (hidden during print) */}
-        <div className="no-print flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-4">
+        {/* Modal Footer (hidden in print) */}
+        <div className="no-print flex items-center justify-between border-t border-black/[0.06] bg-[#fbfbfd] px-6 py-3.5">
           <span className="text-xs text-slate-500">
             Tip: Select "Save as PDF" in your browser print dialogue.
           </span>
           <button
             onClick={onClose}
-            className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="rounded-xl bg-[#1d1d1f] px-5 py-2 text-xs font-semibold text-white hover:bg-black transition-colors cursor-pointer"
           >
             Close
           </button>
