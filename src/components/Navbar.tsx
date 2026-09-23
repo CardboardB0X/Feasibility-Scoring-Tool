@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CapstoneTitle, Researcher } from '../types/scoring';
+import { AuthSession } from '../types/auth';
 import { calculateTitleSummary } from '../utils/calculator';
 import {
   Scale,
@@ -13,7 +14,10 @@ import {
   Upload,
   Settings,
   LayoutGrid,
-  CheckCircle2
+  CheckCircle2,
+  User,
+  LogIn,
+  Menu
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -24,6 +28,10 @@ interface NavbarProps {
   researchers: Researcher[];
   activeResearcherId: string;
   onSelectResearcher: (id: string) => void;
+  session: AuthSession | null;
+  onOpenAuth: () => void;
+  onOpenProfile: () => void;
+  onOpenMobileDrawer: () => void;
   onOpenStartMenu: () => void;
   onOpenLeaderboard: () => void;
   onOpenAdviserReport: () => void;
@@ -42,6 +50,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   researchers,
   activeResearcherId,
   onSelectResearcher,
+  session,
+  onOpenAuth,
+  onOpenProfile,
+  onOpenMobileDrawer,
   onOpenStartMenu,
   onOpenLeaderboard,
   onOpenAdviserReport,
@@ -70,7 +82,16 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 border-b border-black/[0.08] bg-white/85 backdrop-blur-2xl transition-all">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
         {/* Brand & Start Menu Launcher */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Mobile hamburger menu toggle */}
+          <button
+            onClick={onOpenMobileDrawer}
+            title="Open Menu"
+            className="md:hidden flex h-8 w-8 items-center justify-center rounded-xl bg-black/[0.05] text-slate-700 hover:bg-black/[0.09] active:scale-95 transition-all cursor-pointer"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+
           <button
             onClick={onOpenStartMenu}
             title="Open Start Menu (Overview & Titles)"
@@ -165,7 +186,42 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Global Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* User Account Pill / Button */}
+          {session ? (
+            <button
+              onClick={onOpenProfile}
+              title="My Account & Saved Rooms"
+              className="flex items-center gap-2 rounded-2xl border border-black/[0.08] bg-white px-2.5 py-1.5 hover:border-black/[0.15] hover:shadow-xs active:scale-[0.98] transition-all cursor-pointer shadow-2xs"
+            >
+              <div
+                className={clsx(
+                  "flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-black text-white",
+                  session.user.avatarColor || 'bg-[#0071e3]'
+                )}
+              >
+                {session.user.name.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="hidden sm:block text-left max-w-[100px] truncate leading-tight">
+                <div className="text-xs font-bold text-[#1d1d1f] truncate">
+                  {session.user.name}
+                </div>
+                <div className="text-[10px] text-slate-400 font-medium truncate">
+                  {session.user.role}
+                </div>
+              </div>
+            </button>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              title="Sign In or Register"
+              className="flex items-center gap-1.5 rounded-2xl bg-[#0071e3] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0077ed] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Sign In</span>
+            </button>
+          )}
+
           {/* Reset / Blank button */}
           <button
             onClick={onResetData}

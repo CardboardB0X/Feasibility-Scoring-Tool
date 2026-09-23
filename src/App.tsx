@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CapstoneTitle, Researcher, LikertPoint } from './types/scoring';
+import { AuthSession } from './types/auth';
 import { METERS, QUESTIONS, MASTER_LIKERT_ANCHORS } from './data/rubric';
+import { SAMPLE_BENCHMARK_TITLES } from './data/sampleData';
 import { calculateTitleSummary } from './utils/calculator';
 import { encryptData, decryptData, formatRoomCode } from './utils/crypto';
 import { saveRoomToCloud, fetchRoomFromCloud } from './utils/roomApi';
+import { getActiveSession, logoutUser, addRoomToUserHistory } from './utils/auth';
 import { StartScreen } from './components/StartScreen';
 import { RoomHeader } from './components/RoomHeader';
 import { Navbar } from './components/Navbar';
@@ -11,6 +14,9 @@ import { MeterSection } from './components/MeterSection';
 import { ScoreGauge } from './components/ScoreGauge';
 import { RedLineBanner } from './components/RedLineBanner';
 import { MobileBottomBar } from './components/MobileBottomBar';
+import { MobileDrawer } from './components/MobileDrawer';
+import { AuthModal } from './components/AuthModal';
+import { UserProfileModal } from './components/UserProfileModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { AdviserReportModal } from './components/AdviserReportModal';
 import { TitleManagerModal } from './components/TitleManagerModal';
@@ -20,12 +26,16 @@ import { BookOpen, ChevronDown, ChevronUp, Edit3, Layers, Sparkles } from 'lucid
 import clsx from 'clsx';
 
 const STORAGE_ACTIVE_ROOM = 'capstone_active_room_v5';
-const STORAGE_SAVED_ROOMS = 'capstone_saved_rooms_v5';
 
 export const App: React.FC = () => {
+  // Auth state
+  const [session, setSession] = useState<AuthSession | null>(() => getActiveSession());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
   // Room state
   const [activeRoomCode, setActiveRoomCode] = useState<string | null>(() => {
-    // Check URL hash for direct invite link (e.g. #code=CAP-7492)
     const hash = window.location.hash;
     if (hash && hash.includes('code=')) {
       const match = hash.match(/code=([A-Za-z0-9-]+)/);
@@ -48,7 +58,6 @@ export const App: React.FC = () => {
   const [isTitleManagerOpen, setIsTitleManagerOpen] = useState(false);
   const [isResearcherManagerOpen, setIsResearcherManagerOpen] = useState(false);
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
-  const [showAnchorGuide, setShowAnchorGuide] = useState(false);
 
   const isInitialMount = useRef(true);
 
@@ -108,7 +117,8 @@ export const App: React.FC = () => {
     roomCode: string,
     newTitles: CapstoneTitle[],
     evaluator: Researcher,
-    isNew: boolean
+    isNew: boolean,
+    groupName?: string
   ) => {
     setActiveRoomCode(roomCode);
     setTitles(newTitles);
@@ -120,6 +130,17 @@ export const App: React.FC = () => {
     setActiveTitleId(newTitles[0]?.id || 'TITLE-1');
     localStorage.setItem(STORAGE_ACTIVE_ROOM, roomCode);
 
+    // Save to user's saved rooms history if authenticated
+    if (session) {
+      addRoomToUserHistory(session.user.id, {
+        roomCode,
+        groupName: groupName || 'Capstone Evaluation',
+        roleInRoom: evaluator.role || 'Evaluator',
+        joinedAt: new Date().toISOString(),
+        titleCount: newTitles.length
+      });
+    }
+
     // Initial sync
     syncRoomToCloud(roomCode, newTitles, [evaluator]);
   };
@@ -130,6 +151,129 @@ export const App: React.FC = () => {
       setActiveRoomCode(null);
       localStorage.removeItem(STORAGE_ACTIVE_ROOM);
       window.location.hash = '';
+    }
+  };
+
+  // Select room from user profile
+  const handleSelectRoomFromProfile = async (code: string) => {
+    try {
+      setIsSyncing(true);
+      const formattedCode = formatRoomCode(code);
+      const encrypted = await fetchRoomFromCloud(formattedCode);
+      if (!encrypted) {
+        alert(`Room "${formattedCode}" was not found.`);
+        return;
+      }
+      interface DecryptedRoom {
+        roomCode: string;
+        groupName: string;
+        titles: CapstoneTitle[];
+        researchers: Researcher[];
+      }
+      const roomData = await decryptData<DecryptedRoom>(encrypted, formattedCode);
+      if (roomData && roomData.titles) {
+        setActiveRoomCode(formattedCode);
+        setTitles(roomData.titles);
+        const myEvaluator =
+          (session &&
+            roomData.researchers.find(
+              (r) => r.name.toLowerCase() === session.user.name.toLowerCase()
+            )) ||
+          roomData.researchers[0];
+        if (myEvaluator) {
+          setActiveResearcherId(myEvaluator.id);
+        }
+        setResearchers(roomData.researchers || []);
+        setActiveTitleId(roomData.titles[0]?.id || 'TITLE-1');
+        localStorage.setItem(STORAGE_ACTIVE_ROOM, formattedCode);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Failed to load room from profile.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setSession(null);
+  };
+
+  // Export JSON backup
+  const handleExportJSON = () => {
+    const dataStr =
+      'data:text/json;charset=utf-8,' +
+      encodeURIComponent(
+        JSON.stringify(
+          {
+            activeRoomCode,
+            titles,
+            researchers,
+            exportedAt: new Date().toISOString()
+          },
+          null,
+          2
+        )
+      );
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute(
+      'download',
+      `capstone_evaluations_${activeRoomCode || 'backup'}.json`
+    );
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  // Import JSON backup
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        if (parsed.titles && Array.isArray(parsed.titles)) {
+          setTitles(parsed.titles);
+          if (parsed.researchers && Array.isArray(parsed.researchers)) {
+            setResearchers(parsed.researchers);
+          }
+          if (parsed.activeRoomCode) {
+            setActiveRoomCode(parsed.activeRoomCode);
+          }
+          alert('Evaluations imported successfully!');
+        } else {
+          alert('Invalid JSON evaluation file.');
+        }
+      } catch (err) {
+        alert('Failed to parse JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Load sample benchmark titles
+  const handleLoadSampleData = () => {
+    if (
+      confirm(
+        'Load benchmark sample dataset (9 titles across all domains)? Current evaluations will be overwritten.'
+      )
+    ) {
+      setTitles(SAMPLE_BENCHMARK_TITLES);
+      setActiveTitleId(SAMPLE_BENCHMARK_TITLES[0].id);
+    }
+  };
+
+  // Reset all titles evaluations
+  const handleResetData = () => {
+    if (confirm('Reset all evaluations to blank?')) {
+      const reset = titles.map((t) => ({
+        ...t,
+        evaluations: {}
+      }));
+      setTitles(reset);
     }
   };
 
@@ -162,7 +306,31 @@ export const App: React.FC = () => {
 
   // If no room is active, render the Pre-Start Setup Screen!
   if (!activeRoomCode || titles.length === 0) {
-    return <StartScreen onStartRoom={handleStartRoom} />;
+    return (
+      <>
+        <StartScreen
+          onStartRoom={handleStartRoom}
+          session={session}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
+        />
+
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          onAuthSuccess={(newSession) => setSession(newSession)}
+        />
+
+        <UserProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          session={session}
+          onLogout={handleLogout}
+          onSelectRoom={handleSelectRoomFromProfile}
+          activeRoomCode={activeRoomCode}
+        />
+      </>
+    );
   }
 
   const activeTitle = titles.find((t) => t.id === activeTitleId) || titles[0];
@@ -178,7 +346,9 @@ export const App: React.FC = () => {
   // Score Change Handler
   const handleScoreChange = (questionId: string, point: LikertPoint) => {
     if (activeResearcherId === 'ALL_AGGREGATED') {
-      alert('You are currently viewing Group Consensus. Please switch to your evaluator profile in the top bar to submit scores.');
+      alert(
+        'You are currently viewing Group Consensus. Please switch to your evaluator profile in the top bar to submit scores.'
+      );
       return;
     }
 
@@ -203,7 +373,10 @@ export const App: React.FC = () => {
     );
   };
 
-  const handleUpdateActiveTitle = (field: 'title' | 'description' | 'category', val: string) => {
+  const handleUpdateActiveTitle = (
+    field: 'title' | 'description' | 'category',
+    val: string
+  ) => {
     setTitles((prev) =>
       prev.map((t) => (t.id === activeTitle.id ? { ...t, [field]: val } : t))
     );
@@ -219,15 +392,19 @@ export const App: React.FC = () => {
         researchers={researchers}
         activeResearcherId={activeResearcherId}
         onSelectResearcher={setActiveResearcherId}
+        session={session}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
         onOpenStartMenu={() => setIsStartMenuOpen(true)}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenAdviserReport={() => setIsAdviserReportOpen(true)}
         onOpenTitleManager={() => setIsTitleManagerOpen(true)}
         onOpenResearcherManager={() => setIsResearcherManagerOpen(true)}
-        onLoadSampleData={() => {}}
-        onResetData={() => {}}
-        onExportJSON={() => {}}
-        onImportJSON={() => {}}
+        onLoadSampleData={handleLoadSampleData}
+        onResetData={handleResetData}
+        onExportJSON={handleExportJSON}
+        onImportJSON={handleImportJSON}
       />
 
       {/* Main Workspace */}
@@ -322,11 +499,19 @@ export const App: React.FC = () => {
                 >
                   <span>Title {idx + 1}</span>
                   {tSummary.isRedLineTriggered ? (
-                    <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" title="Red Line Disqualified" />
+                    <span
+                      className="h-2 w-2 rounded-full bg-red-400 animate-pulse"
+                      title="Red Line Disqualified"
+                    />
                   ) : tSummary.verdict === 'Approved Finalist' && tSummary.isComplete ? (
-                    <span className="h-2 w-2 rounded-full bg-emerald-400" title="Approved Finalist" />
+                    <span
+                      className="h-2 w-2 rounded-full bg-emerald-400"
+                      title="Approved Finalist"
+                    />
                   ) : tSummary.answeredCount > 0 ? (
-                    <span className="text-[10px] opacity-75 font-mono">({tSummary.answeredCount})</span>
+                    <span className="text-[10px] opacity-75 font-mono">
+                      ({tSummary.answeredCount})
+                    </span>
                   ) : null}
                 </button>
               );
@@ -371,6 +556,42 @@ export const App: React.FC = () => {
         summary={summary}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenReport={() => setIsAdviserReportOpen(true)}
+      />
+
+      {/* Slide-Over Mobile Drawer */}
+      <MobileDrawer
+        isOpen={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        session={session}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onLogout={handleLogout}
+        activeRoomCode={activeRoomCode}
+        titleCount={titles.length}
+        researcherCount={researchers.length}
+        onOpenStartMenu={() => setIsStartMenuOpen(true)}
+        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        onOpenAdviserReport={() => setIsAdviserReportOpen(true)}
+        onOpenTitleManager={() => setIsTitleManagerOpen(true)}
+        onOpenResearcherManager={() => setIsResearcherManagerOpen(true)}
+        onResetData={handleResetData}
+        onExitRoom={handleExitRoom}
+      />
+
+      {/* Auth Modals */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={(newSession) => setSession(newSession)}
+      />
+
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        session={session}
+        onLogout={handleLogout}
+        onSelectRoom={handleSelectRoomFromProfile}
+        activeRoomCode={activeRoomCode}
       />
 
       {/* Modals */}
@@ -419,8 +640,8 @@ export const App: React.FC = () => {
         onSelectTitle={setActiveTitleId}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenResearcherManager={() => setIsResearcherManagerOpen(true)}
-        onLoadSampleData={() => {}}
-        onResetData={() => {}}
+        onLoadSampleData={handleLoadSampleData}
+        onResetData={handleResetData}
       />
     </div>
   );
