@@ -12,9 +12,8 @@ import {
   Download,
   Upload,
   Settings,
-  Grid,
-  Command,
-  LayoutGrid
+  LayoutGrid,
+  CheckCircle2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -68,36 +67,36 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/[0.08] bg-white/80 backdrop-blur-xl transition-all">
+    <header className="sticky top-0 z-40 border-b border-black/[0.08] bg-white/85 backdrop-blur-2xl transition-all">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
         {/* Brand & Start Menu Launcher */}
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenStartMenu}
             title="Open Start Menu (Overview & Titles)"
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 px-3 py-1.5 border border-blue-500/20 text-[#0071e3] hover:bg-blue-500/20 transition-all cursor-pointer group"
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 px-3 py-1.5 border border-blue-500/20 text-[#0071e3] hover:bg-blue-500/20 active:scale-[0.98] transition-all cursor-pointer group shadow-2xs"
           >
             <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#0071e3] text-white shadow-sm group-hover:scale-105 transition-transform">
               <LayoutGrid className="h-4 w-4" />
             </div>
-            <div className="text-left hidden sm:block">
+            <div className="text-left">
               <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600 leading-none">
-                Start Menu
+                Menu
               </div>
-              <div className="text-xs font-extrabold text-slate-900 leading-tight">
-                Launchpad
+              <div className="text-xs font-extrabold text-[#1d1d1f] leading-tight">
+                Start Hub
               </div>
             </div>
           </button>
 
-          <div className="h-5 w-px bg-black/[0.08] hidden sm:block" />
+          <div className="h-5 w-px bg-black/[0.08] hidden md:block" />
 
           {/* Title branding */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-2">
             <span className="text-sm font-extrabold tracking-tight text-[#1d1d1f]">
-              Capstone Feasibility
+              Capstone Evaluator
             </span>
-            <span className="ml-1.5 rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+            <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
               18 Questions
             </span>
           </div>
@@ -110,10 +109,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <select
               value={activeTitleId}
               onChange={(e) => onSelectTitle(e.target.value)}
-              className="max-w-[190px] sm:max-w-[260px] truncate bg-transparent px-2.5 py-1 text-xs font-semibold text-[#1d1d1f] focus:outline-none cursor-pointer"
+              className="max-w-[180px] sm:max-w-[240px] truncate bg-transparent px-2.5 py-1 text-xs font-semibold text-[#1d1d1f] focus:outline-none cursor-pointer"
             >
               {titles.map((t, idx) => {
                 const summary = calculateTitleSummary(t, activeResearcherId, researchers);
+                const titleText = t.title.trim() ? t.title : `(Untitled Title #${idx + 1})`;
                 const tag = summary.isRedLineTriggered
                   ? '🚨 Red Line'
                   : summary.verdict === 'Approved Finalist' && summary.isComplete
@@ -125,14 +125,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'Empty';
                 return (
                   <option key={t.id} value={t.id}>
-                    Title {idx + 1}: {t.title.slice(0, 28)}... [{tag}]
+                    #{idx + 1}: {titleText.slice(0, 24)} [{tag}]
                   </option>
                 );
               })}
             </select>
             <button
               onClick={onOpenTitleManager}
-              title="Edit Title Names & Descriptions"
+              title="Manage All 9 Titles"
               className="rounded-xl p-1.5 text-slate-500 hover:bg-white hover:text-[#0071e3] transition-colors cursor-pointer"
             >
               <Settings className="h-3.5 w-3.5" />
@@ -166,6 +166,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Global Action Buttons */}
         <div className="flex items-center gap-2">
+          {/* Reset / Blank button */}
+          <button
+            onClick={onResetData}
+            title="Reset everything to clean blank titles"
+            className="flex items-center gap-1.5 rounded-2xl border border-black/[0.08] bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50/50 active:scale-[0.98] transition-all cursor-pointer shadow-2xs"
+          >
+            <RotateCcw className="h-3.5 w-3.5 text-slate-400 group-hover:text-red-500" />
+            <span className="hidden sm:inline">Reset Blank</span>
+          </button>
+
           {/* Compare matrix button */}
           <button
             onClick={onOpenLeaderboard}
@@ -179,7 +189,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Adviser Report */}
           <button
             onClick={onOpenAdviserReport}
-            className="flex items-center gap-1.5 rounded-2xl border border-[#0071e3]/30 bg-blue-50/60 px-3.5 py-2 text-xs font-semibold text-[#0071e3] hover:bg-blue-50 active:scale-[0.98] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 rounded-2xl border border-[#0071e3]/30 bg-blue-50/70 px-3.5 py-2 text-xs font-semibold text-[#0071e3] hover:bg-blue-100/70 active:scale-[0.98] transition-all cursor-pointer"
           >
             <FileText className="h-3.5 w-3.5" />
             <span className="hidden md:inline">Adviser Report</span>
@@ -214,7 +224,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onLoadSampleData();
                     setIsActionsOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-[#0071e3] transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer"
                 >
                   <Sparkles className="h-4 w-4 text-purple-600" />
                   <span>Load Benchmark Sample (9 Titles)</span>
@@ -225,7 +235,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onExportJSON();
                     setIsActionsOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-[#0071e3] transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   <Download className="h-4 w-4 text-slate-500" />
                   <span>Backup Evaluations (JSON)</span>
@@ -236,7 +246,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     fileInputRef.current?.click();
                     setIsActionsOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-[#0071e3] transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   <Upload className="h-4 w-4 text-slate-500" />
                   <span>Import Evaluations (JSON)</span>
@@ -252,7 +262,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <RotateCcw className="h-4 w-4 text-red-500" />
-                  <span>Clear All / Reset to Blank</span>
+                  <span>Reset All to Blank</span>
                 </button>
               </div>
             )}

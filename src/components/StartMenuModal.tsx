@@ -11,10 +11,11 @@ import {
   AlertTriangle,
   Users,
   Trophy,
-  CheckCircle2,
   BookOpen,
   X,
-  Play
+  Play,
+  RotateCcw,
+  Edit3
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -28,6 +29,7 @@ interface StartMenuModalProps {
   onOpenLeaderboard: () => void;
   onOpenResearcherManager: () => void;
   onLoadSampleData: () => void;
+  onResetData: () => void;
 }
 
 export const StartMenuModal: React.FC<StartMenuModalProps> = ({
@@ -39,7 +41,8 @@ export const StartMenuModal: React.FC<StartMenuModalProps> = ({
   onSelectTitle,
   onOpenLeaderboard,
   onOpenResearcherManager,
-  onLoadSampleData
+  onLoadSampleData,
+  onResetData
 }) => {
   if (!isOpen) return null;
 
@@ -48,7 +51,6 @@ export const StartMenuModal: React.FC<StartMenuModalProps> = ({
       <div className="relative flex flex-col max-h-[92vh] w-full max-w-5xl rounded-[28px] bg-white/95 backdrop-blur-2xl shadow-2xl border border-black/[0.08] overflow-hidden apple-spring">
         {/* macOS Window Title Bar */}
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-black/[0.06] bg-[#fbfbfd]/80 select-none">
-          {/* Traffic light dots */}
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
@@ -82,26 +84,28 @@ export const StartMenuModal: React.FC<StartMenuModalProps> = ({
 
             <div className="flex-1">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-[#0071e3]/10 px-3 py-0.5 text-xs font-bold text-[#0071e3] mb-1">
-                <span>Decision Support & Delimitation Framework</span>
+                <span>18-Question Closed-Choice Elimination System</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight">
                 Welcome to Capstone Evaluator
               </h1>
               <p className="mt-1 text-sm text-slate-600 leading-relaxed max-w-2xl">
-                A 100% closed-ended 18-question Likert rubric designed to test proposed capstone titles across 6 weighted feasibility meters, eliminate high-risk projects via <strong>The Red Line</strong>, and produce defensible Composite Scores (CTS).
+                Evaluate proposed engineering and computer science capstone titles across 6 weighted meters, eliminate high-risk projects with <strong>The Red Line</strong>, and generate adviser-ready Composite Scores (CTS).
               </p>
             </div>
 
-            <button
-              onClick={() => {
-                onSelectTitle(titles[0].id);
-                onClose();
-              }}
-              className="flex shrink-0 items-center gap-2 rounded-2xl bg-[#0071e3] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-500/20 hover:bg-[#0077ed] active:scale-[0.98] transition-all cursor-pointer"
-            >
-              <Play className="h-4 w-4 fill-white" />
-              <span>Start Evaluating</span>
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+              <button
+                onClick={() => {
+                  onSelectTitle(titles[0].id);
+                  onClose();
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-[#0071e3] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-500/20 hover:bg-[#0077ed] active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <Play className="h-4 w-4 fill-white" />
+                <span>Start Evaluating</span>
+              </button>
+            </div>
           </div>
 
           {/* Quick Actions Row */}
@@ -117,8 +121,8 @@ export const StartMenuModal: React.FC<StartMenuModalProps> = ({
                 <Play className="h-5 w-5 fill-[#0071e3]" />
               </div>
               <div>
-                <div className="text-xs font-bold text-[#1d1d1f]">Start with Title 1</div>
-                <div className="text-[11px] text-slate-500">Answer 18 closed questions</div>
+                <div className="text-xs font-bold text-[#1d1d1f]">Evaluate Title 1 (Blank)</div>
+                <div className="text-[11px] text-slate-500">Type title & answer questions</div>
               </div>
             </button>
 
@@ -150,7 +154,7 @@ export const StartMenuModal: React.FC<StartMenuModalProps> = ({
               </div>
               <div>
                 <div className="text-xs font-bold text-[#1d1d1f]">Load Benchmark Sample</div>
-                <div className="text-[11px] text-slate-500">Populate 9 pre-tested titles</div>
+                <div className="text-[11px] text-slate-500">Fill with 9 demo evaluated titles</div>
               </div>
             </button>
           </div>
@@ -163,13 +167,17 @@ export const StartMenuModal: React.FC<StartMenuModalProps> = ({
                   Candidate Capstone Titles (1 to {titles.length})
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Select any title to view or continue its closed-choice evaluation
+                  Select any title to write its proposal and complete the 18-question evaluation
                 </p>
               </div>
 
-              <div className="text-xs font-semibold text-slate-500">
-                Mode: {activeResearcherId === 'ALL_AGGREGATED' ? 'Group Consensus' : 'Individual'}
-              </div>
+              <button
+                onClick={onResetData}
+                className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 font-semibold cursor-pointer"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset All to Blank</span>
+              </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -177,6 +185,7 @@ export const StartMenuModal: React.FC<StartMenuModalProps> = ({
                 const s = calculateTitleSummary(t, activeResearcherId, researchers);
                 const isDisqualified = s.isRedLineTriggered;
                 const isComplete = s.isComplete;
+                const hasTitle = Boolean(t.title && t.title.trim());
 
                 return (
                   <div
@@ -210,25 +219,27 @@ export const StartMenuModal: React.FC<StartMenuModalProps> = ({
                               ? "bg-amber-100 text-amber-800"
                               : s.answeredCount > 0
                               ? "bg-blue-100 text-blue-800"
-                              : "bg-slate-100 text-slate-600"
+                              : "bg-slate-100 text-slate-500"
                           )}
                         >
                           {isDisqualified
                             ? '🚨 Red Line'
                             : isComplete
                             ? s.verdict
-                            : `${s.answeredCount}/18 answered`}
+                            : s.answeredCount > 0
+                            ? `${s.answeredCount}/18 answered`
+                            : 'Blank'}
                         </span>
                       </div>
 
                       <h4 className="font-bold text-xs text-[#1d1d1f] line-clamp-2 leading-snug group-hover:text-[#0071e3] transition-colors">
-                        {t.title}
+                        {hasTitle ? t.title : `Untitled Title #${idx + 1}`}
                       </h4>
-                      {t.description && (
-                        <p className="mt-1 text-[11px] text-slate-500 line-clamp-2">
-                          {t.description}
-                        </p>
-                      )}
+                      <p className="mt-1 text-[11px] text-slate-400 line-clamp-2 italic">
+                        {t.description && t.description.trim()
+                          ? t.description
+                          : '(Click to enter title & project scope)'}
+                      </p>
                     </div>
 
                     <div className="mt-3 pt-3 border-t border-black/[0.04] flex items-center justify-between text-[11px]">
@@ -236,7 +247,7 @@ export const StartMenuModal: React.FC<StartMenuModalProps> = ({
                         CTS: <strong className="text-slate-900">{s.cts.toFixed(2)}</strong>
                       </span>
                       <span className="font-semibold text-[#0071e3] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                        <span>Evaluate</span>
+                        <span>{hasTitle ? 'Evaluate' : 'Write Title'}</span>
                         <ArrowRight className="h-3 w-3" />
                       </span>
                     </div>

@@ -1,27 +1,27 @@
 import { CapstoneTitle, Researcher } from '../types/scoring';
 
 export const DEFAULT_RESEARCHERS: Researcher[] = [
-  { id: 'R1', name: 'Lead Dev (Researcher 1)', role: 'Core Logic & Architecture', avatarColor: 'bg-blue-600' },
-  { id: 'R2', name: 'Data Specialist (Researcher 2)', role: 'Data Pipelines & Algorithms', avatarColor: 'bg-emerald-600' },
-  { id: 'R3', name: 'QA & Docs (Researcher 3)', role: 'Testing & Empirical Validation', avatarColor: 'bg-purple-600' }
+  { id: 'R1', name: 'Researcher 1 (Lead Dev)', role: 'Core Logic & Architecture', avatarColor: 'bg-[#0071e3]' },
+  { id: 'R2', name: 'Researcher 2 (Data / ML)', role: 'Data Pipelines & Algorithms', avatarColor: 'bg-[#34c759]' },
+  { id: 'R3', name: 'Researcher 3 (QA / Docs)', role: 'Testing & Empirical Validation', avatarColor: 'bg-[#af52de]' }
 ];
 
 /**
- * Clean, empty titles for researchers to input their own capstone titles and evaluate from scratch.
- * Each title has 0 questions answered by default.
+ * 100% Clean, empty titles with blank text and zero answered questions.
+ * Ready for researchers to type their own proposed titles directly.
  */
 export const EMPTY_DEFAULT_TITLES: CapstoneTitle[] = Array.from({ length: 9 }, (_, i) => ({
   id: `TITLE-${i + 1}`,
-  title: `Proposed Capstone Title ${i + 1}`,
-  description: `Enter project scope, target domain, or technical objective for Title ${i + 1}.`,
-  category: `Domain ${i + 1}`,
+  title: '', // completely blank
+  description: '', // completely blank
+  category: '', // completely blank
   createdAt: new Date().toISOString(),
-  evaluations: {}
+  evaluations: {} // zero questions answered
 }));
 
 /**
- * 9 Realistic benchmark sample titles with complete evaluations for demonstration purposes.
- * Can be loaded on-demand anytime via the Start Menu or Actions menu.
+ * 9 Realistic benchmark sample titles with pre-evaluated scores.
+ * Can be loaded on-demand anytime via the "Load Benchmark Sample Data" button.
  */
 export const SAMPLE_BENCHMARK_TITLES: CapstoneTitle[] = [
   {
@@ -32,12 +32,12 @@ export const SAMPLE_BENCHMARK_TITLES: CapstoneTitle[] = [
     createdAt: new Date().toISOString(),
     evaluations: {
       R1: {
-        Q1: 5, Q2: 5, Q3: 4, // M1: 4.67
-        Q4: 5, Q5: 5, Q6: 5, // M2: 5.00
-        Q7: 4, Q8: 4, Q9: 5, // M3: 4.33
-        Q10: 4, Q11: 4, Q12: 4, // M4: 4.00
-        Q13: 5, Q14: 4, Q15: 5, // M5: 4.67
-        Q16: 4, Q17: 4, Q18: 5  // M6: 4.33
+        Q1: 5, Q2: 5, Q3: 4,
+        Q4: 5, Q5: 5, Q6: 5,
+        Q7: 4, Q8: 4, Q9: 5,
+        Q10: 4, Q11: 4, Q12: 4,
+        Q13: 5, Q14: 4, Q15: 5,
+        Q16: 4, Q17: 4, Q18: 5
       }
     }
   },
@@ -170,7 +170,7 @@ export const SAMPLE_BENCHMARK_TITLES: CapstoneTitle[] = [
       R1: {
         Q1: 4, Q2: 4, Q3: 5,
         Q4: 3, Q5: 4, Q6: 3,
-        Q7: 1, Q8: 1, Q9: 1, // M3 basic CRUD & easily solved by off the shelf
+        Q7: 1, Q8: 1, Q9: 1,
         Q10: 3, Q11: 3, Q12: 3,
         Q13: 1, Q14: 1, Q15: 3,
         Q16: 2, Q17: 4, Q18: 1
@@ -179,13 +179,12 @@ export const SAMPLE_BENCHMARK_TITLES: CapstoneTitle[] = [
   }
 ];
 
-// Helper to generate fresh blank titles
 export function getFreshEmptyTitles(): CapstoneTitle[] {
   return Array.from({ length: 9 }, (_, i) => ({
     id: `TITLE-${i + 1}`,
-    title: `Proposed Capstone Title ${i + 1}`,
-    description: `Enter project scope, target domain, or technical objective for Title ${i + 1}.`,
-    category: `Domain ${i + 1}`,
+    title: '',
+    description: '',
+    category: '',
     createdAt: new Date().toISOString(),
     evaluations: {}
   }));

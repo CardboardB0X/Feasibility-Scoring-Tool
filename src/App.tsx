@@ -12,15 +12,33 @@ import { LeaderboardModal } from './components/LeaderboardModal';
 import { AdviserReportModal } from './components/AdviserReportModal';
 import { TitleManagerModal } from './components/TitleManagerModal';
 import { ResearcherManagerModal } from './components/ResearcherManagerModal';
-import { BookOpen, ChevronDown, ChevronUp, Edit3, Layers, LayoutGrid, Sparkles } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, Edit3, Layers, LayoutGrid, Sparkles, RotateCcw, Check } from 'lucide-react';
 import clsx from 'clsx';
 
-// Storage keys - versioned to load empty titles cleanly by default
-const STORAGE_KEY_TITLES = 'capstone_eval_titles_v3_clean';
-const STORAGE_KEY_RESEARCHERS = 'capstone_eval_researchers_v3';
-const STORAGE_KEY_ACTIVE_TITLE = 'capstone_eval_active_title_v3';
-const STORAGE_KEY_ACTIVE_RESEARCHER = 'capstone_eval_active_researcher_v3';
-const STORAGE_KEY_HAS_SEEN_START = 'capstone_eval_has_seen_start_v3';
+// Storage keys
+const STORAGE_KEY_TITLES = 'capstone_eval_titles_v4_clean';
+const STORAGE_KEY_RESEARCHERS = 'capstone_eval_researchers_v4';
+const STORAGE_KEY_ACTIVE_TITLE = 'capstone_eval_active_title_v4';
+const STORAGE_KEY_ACTIVE_RESEARCHER = 'capstone_eval_active_researcher_v4';
+const STORAGE_KEY_HAS_SEEN_START = 'capstone_eval_has_seen_start_v4';
+
+// Auto-purge any stale sample cache from prior sessions
+try {
+  const keys = Object.keys(localStorage);
+  keys.forEach((k) => {
+    const val = localStorage.getItem(k);
+    if (
+      val &&
+      (val.includes('Automated Campus') ||
+        val.includes('Diabetic Retinopathy') ||
+        val.includes('capstone_titles_v1') ||
+        val.includes('capstone_eval_titles_v2') ||
+        val.includes('capstone_eval_titles_v3'))
+    ) {
+      localStorage.removeItem(k);
+    }
+  });
+} catch (e) {}
 
 export const App: React.FC = () => {
   // Load persisted state or default to clean empty titles
@@ -109,10 +127,17 @@ export const App: React.FC = () => {
       ? {}
       : activeTitle?.evaluations?.[activeResearcherId] || {};
 
+  // In-place editing of Active Title
+  const handleUpdateActiveTitle = (field: 'title' | 'description' | 'category', val: string) => {
+    setTitles((prev) =>
+      prev.map((t) => (t.id === activeTitle.id ? { ...t, [field]: val } : t))
+    );
+  };
+
   // Score Change Handler
   const handleScoreChange = (questionId: string, point: LikertPoint) => {
     if (activeResearcherId === 'ALL_AGGREGATED') {
-      alert('You are currently viewing Consolidated Consensus. Please switch to a specific researcher (e.g. Lead Dev) in the top toolbar to record scores.');
+      alert('You are currently viewing Consolidated Consensus. Please switch to a specific researcher (e.g. Researcher 1) in the top toolbar to record individual scores.');
       return;
     }
 
@@ -139,7 +164,7 @@ export const App: React.FC = () => {
 
   // Sample Data & Reset Handlers
   const handleLoadSampleData = () => {
-    if (confirm('Load the 9 realistic benchmark sample titles with pre-evaluated scores? This is great for demonstration.')) {
+    if (confirm('Load 9 sample capstone titles with pre-evaluated benchmark scores for demonstration?')) {
       setTitles(SAMPLE_BENCHMARK_TITLES);
       setActiveTitleId(SAMPLE_BENCHMARK_TITLES[0].id);
       setActiveResearcherId('R1');
@@ -148,11 +173,14 @@ export const App: React.FC = () => {
   };
 
   const handleResetData = () => {
-    if (confirm('Clear all titles and evaluations back to empty templates?')) {
+    if (confirm('Reset all 9 titles to clean blank text and clear all answers?')) {
       const empty = getFreshEmptyTitles();
       setTitles(empty);
       setActiveTitleId(empty[0].id);
       setIsStartMenuOpen(false);
+      try {
+        localStorage.removeItem(STORAGE_KEY_TITLES);
+      } catch (e) {}
     }
   };
 
@@ -218,19 +246,24 @@ export const App: React.FC = () => {
 
       {/* Main Container */}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
-        {/* Active Title Hero Banner */}
+        {/* In-Place Editable Active Title Hero Banner */}
         <div className="mb-6 rounded-[28px] border border-black/[0.07] bg-white/95 backdrop-blur-xl p-6 md:p-8 shadow-xs apple-spring">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-black/[0.05] pb-5">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-2">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-black/[0.05] pb-5">
+            <div className="flex-1 space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-lg bg-black/[0.05] px-2.5 py-0.5 font-mono text-xs font-bold text-slate-700">
                   TITLE #{activeTitleIndex + 1} OF {titles.length}
                 </span>
-                {activeTitle.category && (
-                  <span className="rounded-lg bg-blue-50 border border-blue-200/60 px-2.5 py-0.5 text-xs font-semibold text-[#0071e3]">
-                    {activeTitle.category}
-                  </span>
-                )}
+
+                {/* Inline category input */}
+                <input
+                  type="text"
+                  value={activeTitle.category || ''}
+                  onChange={(e) => handleUpdateActiveTitle('category', e.target.value)}
+                  placeholder="Type Domain (e.g., IoT, AI, Web)..."
+                  className="rounded-lg border border-black/[0.08] bg-black/[0.02] px-2.5 py-0.5 text-xs font-semibold text-[#0071e3] focus:outline-none focus:border-[#0071e3] focus:bg-white transition-all max-w-[220px]"
+                />
+
                 {activeResearcherId === 'ALL_AGGREGATED' ? (
                   <span className="rounded-lg bg-purple-50 border border-purple-200/60 px-2.5 py-0.5 text-xs font-semibold text-purple-800">
                     👥 Consolidated Group Consensus
@@ -242,24 +275,42 @@ export const App: React.FC = () => {
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight leading-snug">
-                {activeTitle.title}
-              </h1>
+              {/* Inline Title input */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                  Proposed Capstone Title Name (Click to Edit):
+                </label>
+                <input
+                  type="text"
+                  value={activeTitle.title}
+                  onChange={(e) => handleUpdateActiveTitle('title', e.target.value)}
+                  placeholder={`Enter Capstone Title #${activeTitleIndex + 1} here...`}
+                  className="w-full text-xl sm:text-2xl font-extrabold text-[#1d1d1f] tracking-tight bg-transparent border-b border-dashed border-black/15 focus:border-[#0071e3] focus:outline-none pb-1 transition-all placeholder:text-slate-300 placeholder:font-normal"
+                />
+              </div>
 
-              {activeTitle.description && (
-                <p className="mt-1.5 text-sm text-slate-600 max-w-3xl leading-relaxed">
-                  {activeTitle.description}
-                </p>
-              )}
+              {/* Inline Description input */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                  Scope & Research Objectives (Click to Edit):
+                </label>
+                <textarea
+                  value={activeTitle.description || ''}
+                  onChange={(e) => handleUpdateActiveTitle('description', e.target.value)}
+                  placeholder="Enter project scope, target user community, or core technical problem statement..."
+                  rows={2}
+                  className="w-full text-xs sm:text-sm text-slate-700 bg-transparent border border-dashed border-black/15 rounded-xl p-2.5 focus:border-[#0071e3] focus:bg-white focus:outline-none resize-none transition-all placeholder:text-slate-300"
+                />
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+            <div className="flex flex-wrap items-center gap-2 self-start shrink-0">
               <button
                 onClick={() => setIsTitleManagerOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-2xl border border-black/[0.08] bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer"
               >
                 <Edit3 className="h-3.5 w-3.5 text-slate-400" />
-                <span>Rename / Edit Title</span>
+                <span>Manage Titles</span>
               </button>
             </div>
           </div>
@@ -422,6 +473,7 @@ export const App: React.FC = () => {
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenResearcherManager={() => setIsResearcherManagerOpen(true)}
         onLoadSampleData={handleLoadSampleData}
+        onResetData={handleResetData}
       />
 
       {/* Leaderboard Modal */}
