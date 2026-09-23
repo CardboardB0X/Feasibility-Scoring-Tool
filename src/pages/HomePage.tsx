@@ -26,7 +26,8 @@ interface HomePageProps {
     titles: CapstoneTitle[],
     evaluator: Researcher,
     isNew: boolean,
-    groupName?: string
+    groupName?: string,
+    allResearchers?: Researcher[]
   ) => void;
   onNavigate: (page: any) => void;
   onSessionUpdate: (newSession: GuestSession) => void;
@@ -138,7 +139,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       // Colorful celebration burst!
       triggerColorfulBurst();
 
-      onStartRoom(roomCode, newTitles, newEvaluator, true, finalGroupName);
+      onStartRoom(roomCode, newTitles, newEvaluator, true, finalGroupName, [newEvaluator]);
       onNavigate('dashboard');
     } catch (err) {
       console.error(err);
@@ -211,7 +212,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       // Colorful celebration burst!
       triggerColorfulBurst();
 
-      onStartRoom(formattedCode, roomData.titles, currentEvaluator, false, roomData.groupName);
+      onStartRoom(formattedCode, roomData.titles, currentEvaluator, false, roomData.groupName, updatedResearchers);
       onNavigate('dashboard');
     } catch (err) {
       console.error(err);

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { EvaluationSummary } from '../types/scoring';
-import { Award, AlertTriangle, XCircle, ShieldAlert, Sparkles, TrendingUp, Info } from 'lucide-react';
+import { Award, AlertTriangle, XCircle, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import clsx from 'clsx';
 
@@ -204,17 +204,6 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({ summary }) => {
             </div>
           );
         })}
-      </div>
-
-      {/* Formula note */}
-      <div className="mt-5 rounded-2xl bg-black/[0.03] p-3 text-[11px] text-slate-500 border border-black/[0.04]">
-        <div className="flex items-center gap-1 font-bold text-slate-700 mb-1">
-          <Info className="h-3 w-3 text-[#0071e3]" />
-          CTS Calculation Formula:
-        </div>
-        <div className="font-mono text-[10px] text-slate-600 leading-tight">
-          CTS = (M₁×0.2) + (M₂×0.2) + (M₃×0.2) + (M₄×0.15) + (M₅×0.15) + (M₆×0.10)
-        </div>
       </div>
     </div>
   );

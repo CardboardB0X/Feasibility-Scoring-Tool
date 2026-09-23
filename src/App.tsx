@@ -78,7 +78,7 @@ export const App: React.FC = () => {
     }
   };
 
-  // Pull latest updates from cloud
+  // Pull latest updates from cloud with non-destructive evaluation merge
   const handleFetchLatest = async () => {
     if (!activeRoomCode) return;
     try {
@@ -92,9 +92,43 @@ export const App: React.FC = () => {
         }
         const decrypted = await decryptData<DecryptedRoom>(encrypted, activeRoomCode);
         if (decrypted && decrypted.titles) {
-          setTitles(decrypted.titles);
+          setTitles((prevTitles) => {
+            if (!prevTitles || prevTitles.length === 0) return decrypted.titles;
+            return decrypted.titles.map((dTitle) => {
+              const localTitle = prevTitles.find((t) => t.id === dTitle.id);
+              if (!localTitle) return dTitle;
+              // Non-destructive merge of evaluations across all researchers
+              const mergedEvaluations: Record<string, Record<string, LikertPoint>> = {
+                ...(dTitle.evaluations || {})
+              };
+              if (localTitle.evaluations) {
+                for (const [rId, scores] of Object.entries(localTitle.evaluations)) {
+                  mergedEvaluations[rId] = {
+                    ...(mergedEvaluations[rId] || {}),
+                    ...scores
+                  };
+                }
+              }
+              return {
+                ...dTitle,
+                title: dTitle.title || localTitle.title,
+                category: dTitle.category || localTitle.category,
+                description: dTitle.description || localTitle.description,
+                evaluations: mergedEvaluations
+              };
+            });
+          });
+
           if (decrypted.researchers) {
-            setResearchers(decrypted.researchers);
+            setResearchers((prevResearchers) => {
+              const merged = [...decrypted.researchers];
+              prevResearchers.forEach((pr) => {
+                if (!merged.some((mr) => mr.id === pr.id)) {
+                  merged.push(pr);
+                }
+              });
+              return merged;
+            });
           }
         }
       }
@@ -111,14 +145,16 @@ export const App: React.FC = () => {
     newTitles: CapstoneTitle[],
     evaluator: Researcher,
     isNew: boolean,
-    groupName?: string
+    groupName?: string,
+    allResearchers?: Researcher[]
   ) => {
     setActiveRoomCode(roomCode);
     setTitles(newTitles);
-    setResearchers((prev) => {
-      const exists = prev.some((r) => r.id === evaluator.id);
-      return exists ? prev : [...prev, evaluator];
-    });
+    const researchersList =
+      allResearchers && allResearchers.length > 0
+        ? (allResearchers.some((r) => r.id === evaluator.id) ? allResearchers : [...allResearchers, evaluator])
+        : [evaluator];
+    setResearchers(researchersList);
     setActiveResearcherId(evaluator.id);
     setActiveTitleId(newTitles[0]?.id || 'TITLE-1');
     localStorage.setItem(STORAGE_ACTIVE_ROOM, roomCode);
@@ -134,8 +170,8 @@ export const App: React.FC = () => {
       });
     }
 
-    // Initial sync
-    syncRoomToCloud(roomCode, newTitles, [evaluator]);
+    // Initial sync preserving all researchers
+    syncRoomToCloud(roomCode, newTitles, researchersList);
     setActivePage('dashboard');
     showToast('success', `Room ${roomCode} loaded with AES-256 cloud sync`, 'Room Connected');
   };
@@ -199,11 +235,13 @@ export const App: React.FC = () => {
     showToast('info', 'You have switched session.', 'Account');
   };
 
-  // Score Change Handler for Questionnaire
+  // Score Change Handler for Questionnaire - scoped to user evaluator identity
   const handleScoreChange = (questionId: string, point: LikertPoint) => {
-    if (activeResearcherId === 'ALL_AGGREGATED') {
+    const targetEvaluatorId = session?.id || (activeResearcherId !== 'ALL_AGGREGATED' ? activeResearcherId : null);
+
+    if (!targetEvaluatorId) {
       alert(
-        'You are currently viewing Group Consensus. Please switch to your evaluator profile to submit scores.'
+        'You are currently viewing Group Consensus. Please switch to your personal evaluator profile to submit scores.'
       );
       return;
     }
@@ -212,12 +250,12 @@ export const App: React.FC = () => {
       prevTitles.map((t) => {
         if (t.id === activeTitleId) {
           const prevEvaluations = t.evaluations || {};
-          const currentScores = prevEvaluations[activeResearcherId] || {};
+          const currentScores = prevEvaluations[targetEvaluatorId] || {};
           return {
             ...t,
             evaluations: {
               ...prevEvaluations,
-              [activeResearcherId]: {
+              [targetEvaluatorId]: {
                 ...currentScores,
                 [questionId]: point
               }
@@ -300,6 +338,7 @@ export const App: React.FC = () => {
                 onExitRoom={handleExitRoom}
                 isSyncing={isSyncing}
                 onSync={handleFetchLatest}
+                onSelectResearcher={setActiveResearcherId}
               />
             ) : (
               <HomePage
