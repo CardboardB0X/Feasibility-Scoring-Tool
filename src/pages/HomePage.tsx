@@ -19,7 +19,8 @@ import {
   FileText,
   BarChart3,
   HelpCircle,
-  Trophy
+  Trophy,
+  Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -35,6 +36,7 @@ interface HomePageProps {
   ) => void;
   onNavigate: (page: any) => void;
   onOpenAuth: () => void;
+  onClearAllData?: () => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
@@ -42,7 +44,8 @@ export const HomePage: React.FC<HomePageProps> = ({
   activeRoomCode,
   onStartRoom,
   onNavigate,
-  onOpenAuth
+  onOpenAuth,
+  onClearAllData
 }) => {
   const [activeTab, setActiveTab] = useState<'CREATE' | 'JOIN' | 'DEMO'>('CREATE');
 
@@ -53,11 +56,7 @@ export const HomePage: React.FC<HomePageProps> = ({
     session ? session.user.role : 'Lead Dev / Systems Architect'
   );
   const [titleCount, setTitleCount] = useState<number>(3);
-  const [titleInputs, setTitleInputs] = useState<string[]>([
-    'Title 1: Proposed Capstone Project',
-    'Title 2: Proposed Backup Capstone Project',
-    'Title 3: Alternative Title'
-  ]);
+  const [titleInputs, setTitleInputs] = useState<string[]>(['', '', '']);
 
   // Join Room State
   const [joinCode, setJoinCode] = useState('');
@@ -75,7 +74,7 @@ export const HomePage: React.FC<HomePageProps> = ({
     setTitleInputs((prev) => {
       const next = [...prev];
       while (next.length < clamped) {
-        next.push(`Proposed Title ${next.length + 1}`);
+        next.push('');
       }
       return next.slice(0, clamped);
     });
@@ -108,9 +107,9 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       const newTitles: CapstoneTitle[] = titleInputs.map((titleText, idx) => ({
         id: `TITLE-${idx + 1}`,
-        title: titleText.trim() || `Proposed Capstone Title ${idx + 1}`,
+        title: titleText.trim(),
         description: '',
-        category: `Domain ${idx + 1}`,
+        category: '',
         createdAt: new Date().toISOString(),
         evaluations: {}
       }));
@@ -236,7 +235,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
           {/* Quick Action Pills if in active room */}
           {activeRoomCode && (
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={() => onNavigate('dashboard')}
                 className="flex items-center gap-2 rounded-2xl bg-[#0071e3] text-white px-5 py-2.5 text-xs font-bold shadow-md shadow-blue-500/20 hover:bg-[#0077ed] active:scale-[0.98] transition-all cursor-pointer"
@@ -244,6 +243,16 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <span>Return to Active Room ({activeRoomCode})</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
+
+              {onClearAllData && (
+                <button
+                  onClick={onClearAllData}
+                  className="flex items-center gap-1.5 rounded-2xl border border-red-200 bg-white text-red-600 hover:bg-red-50 px-4 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Clear All Stored Data</span>
+                </button>
+              )}
             </div>
           )}
         </div>

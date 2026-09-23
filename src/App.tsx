@@ -5,6 +5,7 @@ import { ActivePage } from './types/navigation';
 import { SAMPLE_BENCHMARK_TITLES } from './data/sampleData';
 import { encryptData, decryptData, formatRoomCode } from './utils/crypto';
 import { saveRoomToCloud, fetchRoomFromCloud } from './utils/roomApi';
+import { clearLocalCloudCache } from './utils/cloudDb';
 import { getActiveSession, logoutUser, addRoomToUserHistory } from './utils/auth';
 
 import { Navbar } from './components/Navbar';
@@ -315,6 +316,27 @@ export const App: React.FC = () => {
     }
   };
 
+  // Clear all data completely (local storage, cloud caches, session, active room)
+  const handleClearAllData = () => {
+    if (
+      confirm(
+        'Are you sure you want to clear ALL data? This will wipe your active room, local evaluations, cached credentials, and reset everything to completely blank.'
+      )
+    ) {
+      try {
+        localStorage.clear();
+      } catch (e) {}
+      clearLocalCloudCache();
+      setActiveRoomCode(null);
+      setTitles([]);
+      setResearchers([]);
+      setSession(null);
+      window.location.hash = '';
+      setActivePage('home');
+      showToast('info', 'All data has been wiped. The application is completely blank.', 'All Data Cleared');
+    }
+  };
+
   // If activeRoomCode was restored from localStorage, fetch data on mount
   useEffect(() => {
     if (activeRoomCode && titles.length === 0) {
@@ -354,6 +376,7 @@ export const App: React.FC = () => {
         onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
         onLoadSampleData={handleLoadSampleData}
         onResetData={handleResetData}
+        onClearAllData={handleClearAllData}
         onExportJSON={handleExportJSON}
         onImportJSON={handleImportJSON}
       />
@@ -367,6 +390,7 @@ export const App: React.FC = () => {
             onStartRoom={handleStartRoom}
             onNavigate={setActivePage}
             onOpenAuth={() => setIsAuthModalOpen(true)}
+            onClearAllData={handleClearAllData}
           />
         )}
 
@@ -389,6 +413,7 @@ export const App: React.FC = () => {
                 }}
                 onNavigate={setActivePage}
                 onExitRoom={handleExitRoom}
+                onClearAllData={handleClearAllData}
                 isSyncing={isSyncing}
                 onSync={handleFetchLatest}
               />
@@ -399,6 +424,7 @@ export const App: React.FC = () => {
                 onStartRoom={handleStartRoom}
                 onNavigate={setActivePage}
                 onOpenAuth={() => setIsAuthModalOpen(true)}
+                onClearAllData={handleClearAllData}
               />
             )}
           </>
@@ -427,6 +453,7 @@ export const App: React.FC = () => {
                 onStartRoom={handleStartRoom}
                 onNavigate={setActivePage}
                 onOpenAuth={() => setIsAuthModalOpen(true)}
+                onClearAllData={handleClearAllData}
               />
             )}
           </>
@@ -455,6 +482,7 @@ export const App: React.FC = () => {
                 onStartRoom={handleStartRoom}
                 onNavigate={setActivePage}
                 onOpenAuth={() => setIsAuthModalOpen(true)}
+                onClearAllData={handleClearAllData}
               />
             )}
           </>
@@ -479,6 +507,7 @@ export const App: React.FC = () => {
                 onStartRoom={handleStartRoom}
                 onNavigate={setActivePage}
                 onOpenAuth={() => setIsAuthModalOpen(true)}
+                onClearAllData={handleClearAllData}
               />
             )}
           </>
@@ -492,6 +521,7 @@ export const App: React.FC = () => {
             onSelectRoom={handleSelectRoomFromAccount}
             activeRoomCode={activeRoomCode}
             onNavigate={setActivePage}
+            onClearAllData={handleClearAllData}
           />
         )}
       </main>
@@ -509,6 +539,7 @@ export const App: React.FC = () => {
         activePage={activePage}
         onNavigate={setActivePage}
         onResetData={handleResetData}
+        onClearAllData={handleClearAllData}
         onExitRoom={handleExitRoom}
       />
 

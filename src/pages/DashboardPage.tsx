@@ -18,7 +18,8 @@ import {
   RotateCcw,
   DoorOpen,
   Lock,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -32,6 +33,7 @@ interface DashboardPageProps {
   onSelectTitleToViewResults: (titleId: string) => void;
   onNavigate: (page: any) => void;
   onExitRoom: () => void;
+  onClearAllData?: () => void;
   isSyncing: boolean;
   onSync: () => void;
 }
@@ -46,6 +48,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onSelectTitleToViewResults,
   onNavigate,
   onExitRoom,
+  onClearAllData,
   isSyncing,
   onSync
 }) => {
@@ -129,6 +132,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             >
               <DoorOpen className="h-4 w-4" />
             </button>
+
+            {onClearAllData && (
+              <button
+                onClick={onClearAllData}
+                title="Clear all data and reset"
+                className="flex items-center gap-1.5 rounded-2xl border border-red-200 bg-white p-2.5 text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer shadow-2xs"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>

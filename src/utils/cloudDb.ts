@@ -275,3 +275,25 @@ export async function fetchUserFromDatabase(email: string): Promise<string | nul
 
   return null;
 }
+
+/**
+ * Completely purges all locally stored cloud caches, rooms, and sessions.
+ */
+export function clearLocalCloudCache(): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const keys = Object.keys(localStorage);
+      for (const k of keys) {
+        if (
+          k.startsWith(LOCAL_ROOM_PREFIX) ||
+          k.startsWith(LOCAL_USER_PREFIX) ||
+          k.startsWith('capstone_')
+        ) {
+          localStorage.removeItem(k);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to clear local cloud cache', e);
+  }
+}

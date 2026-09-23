@@ -18,7 +18,8 @@ import {
   Lock,
   Copy,
   Check,
-  Home
+  Home,
+  Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -34,6 +35,7 @@ interface MobileDrawerProps {
   activePage: ActivePage;
   onNavigate: (page: ActivePage) => void;
   onResetData: () => void;
+  onClearAllData?: () => void;
   onExitRoom: () => void;
 }
 
@@ -49,6 +51,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   activePage,
   onNavigate,
   onResetData,
+  onClearAllData,
   onExitRoom
 }) => {
   const [copied, setCopied] = React.useState(false);
@@ -348,6 +351,29 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 <div className="flex-1">
                   <div className="font-bold">Reset All to Blank</div>
                   <div className="text-[10px] text-red-400">Clear evaluations in this room</div>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* App Data Controls */}
+          {onClearAllData && (
+            <div className="space-y-1.5 pt-4 border-t border-black/[0.06]">
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 mb-1">
+                Data Management
+              </span>
+
+              <button
+                onClick={() => {
+                  onClearAllData();
+                  onClose();
+                }}
+                className="w-full min-h-[48px] flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left"
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+                <div className="flex-1">
+                  <div className="font-bold">Clear All Data (Wipe Everything)</div>
+                  <div className="text-[10px] text-red-400">Wipe all rooms, accounts & cached evaluations</div>
                 </div>
               </button>
             </div>

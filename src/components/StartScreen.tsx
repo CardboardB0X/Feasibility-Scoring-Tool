@@ -53,11 +53,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
     session ? session.user.role : 'Lead Dev / Systems Architect'
   );
   const [titleCount, setTitleCount] = useState<number>(3); // Defaults to 3, allowed 2 to 9
-  const [titleInputs, setTitleInputs] = useState<string[]>([
-    'Title 1: Proposed Capstone Project',
-    'Title 2: Proposed Backup Capstone Project',
-    'Title 3: Alternative Title'
-  ]);
+  const [titleInputs, setTitleInputs] = useState<string[]>(['', '', '']);
 
   // Join Room State
   const [joinCode, setJoinCode] = useState('');
@@ -93,7 +89,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
     setTitleInputs((prev) => {
       const next = [...prev];
       while (next.length < clamped) {
-        next.push(`Proposed Title ${next.length + 1}`);
+        next.push('');
       }
       return next.slice(0, clamped);
     });
@@ -127,9 +123,9 @@ export const StartScreen: React.FC<StartScreenProps> = ({
 
       const newTitles: CapstoneTitle[] = titleInputs.map((titleText, idx) => ({
         id: `TITLE-${idx + 1}`,
-        title: titleText.trim() || `Proposed Capstone Title ${idx + 1}`,
+        title: titleText.trim(),
         description: '',
-        category: `Domain ${idx + 1}`,
+        category: '',
         createdAt: new Date().toISOString(),
         evaluations: {}
       }));

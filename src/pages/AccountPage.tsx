@@ -13,7 +13,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Lock,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -24,6 +25,7 @@ interface AccountPageProps {
   onSelectRoom: (roomCode: string) => void;
   activeRoomCode: string | null;
   onNavigate: (page: any) => void;
+  onClearAllData?: () => void;
 }
 
 export const AccountPage: React.FC<AccountPageProps> = ({
@@ -32,7 +34,8 @@ export const AccountPage: React.FC<AccountPageProps> = ({
   onLogout,
   onSelectRoom,
   activeRoomCode,
-  onNavigate
+  onNavigate,
+  onClearAllData
 }) => {
   const user = session?.user;
   const userRooms = user ? getUserRooms(user.id) : [];
@@ -211,6 +214,30 @@ export const AccountPage: React.FC<AccountPageProps> = ({
             </div>
           )}
         </div>
+
+        {/* Data Management & Danger Zone */}
+        {onClearAllData && (
+          <div className="rounded-[28px] border border-red-200 bg-red-50/40 p-6 sm:p-8 space-y-3">
+            <div className="flex items-center gap-2 text-red-700">
+              <Trash2 className="h-4 w-4" />
+              <h3 className="text-xs font-black uppercase tracking-wider">
+                Data Management & Reset Slate
+              </h3>
+            </div>
+            <p className="text-xs text-red-900/80 leading-relaxed">
+              Need to clear all evaluation data? This will wipe your active room, local evaluations, cached accounts, and reset the entire app to a 100% empty slate.
+            </p>
+            <div className="pt-1">
+              <button
+                onClick={onClearAllData}
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white px-4 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-xs"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Clear All Data & Reset App</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

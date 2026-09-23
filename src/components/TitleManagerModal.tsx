@@ -55,8 +55,8 @@ export const TitleManagerModal: React.FC<TitleManagerModalProps> = ({
     const newId = `TITLE-${Date.now()}`;
     const newTitleObj: CapstoneTitle = {
       id: newId,
-      title: `Proposed Title ${localTitles.length + 1}`,
-      description: 'Enter scope and research objectives...',
+      title: '',
+      description: '',
       createdAt: new Date().toISOString(),
       evaluations: {}
     };

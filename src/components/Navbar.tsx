@@ -19,7 +19,8 @@ import {
   ChevronDown,
   Cloud,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -32,6 +33,7 @@ interface NavbarProps {
   onOpenMobileDrawer: () => void;
   onLoadSampleData: () => void;
   onResetData: () => void;
+  onClearAllData?: () => void;
   onExportJSON: () => void;
   onImportJSON: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -45,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenMobileDrawer,
   onLoadSampleData,
   onResetData,
+  onClearAllData,
   onExportJSON,
   onImportJSON
 }) => {
@@ -307,11 +310,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onResetData();
                     setIsActionsOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
                 >
-                  <RotateCcw className="h-4 w-4 text-red-500" />
-                  <span>Reset All to Blank</span>
+                  <RotateCcw className="h-4 w-4 text-amber-500" />
+                  <span>Reset Evaluations in Room</span>
                 </button>
+
+                {onClearAllData && (
+                  <button
+                    onClick={() => {
+                      onClearAllData();
+                      setIsActionsOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <span>Clear All Data (Wipe Everything)</span>
+                  </button>
+                )}
               </div>
             )}
           </div>

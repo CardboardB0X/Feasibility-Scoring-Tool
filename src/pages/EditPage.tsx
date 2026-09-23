@@ -54,9 +54,9 @@ export const EditPage: React.FC<EditPageProps> = ({
     const newIndex = localTitles.length + 1;
     const newTitle: CapstoneTitle = {
       id: `TITLE-${Date.now()}`,
-      title: `Proposed Capstone Title #${newIndex}`,
+      title: '',
       description: '',
-      category: `Domain ${newIndex}`,
+      category: '',
       createdAt: new Date().toISOString(),
       evaluations: {}
     };
