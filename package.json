@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npx tsx test/verify-scoring.mjs && npx tsx test/verify-crypto.mjs && npx tsx test/verify-auth.mjs && npx tsx test/verify-cloud-db.mjs"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
