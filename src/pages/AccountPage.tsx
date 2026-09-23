@@ -1,44 +1,91 @@
-import React from 'react';
-import { AuthSession } from '../types/auth';
-import { getUserRooms } from '../utils/auth';
+import React, { useState } from 'react';
+import { GuestSession } from '../types/auth';
+import { getUserRooms, saveGuestSession, clearGuestSession, AVATAR_COLORS } from '../utils/auth';
+import confetti from 'canvas-confetti';
 import {
   User,
-  Mail,
   ShieldCheck,
   DoorOpen,
-  LogOut,
-  LogIn,
   Calendar,
   Layers,
   ArrowRight,
   ArrowLeft,
   Lock,
   Sparkles,
-  Trash2
+  Check,
+  RotateCcw
 } from 'lucide-react';
 import clsx from 'clsx';
 
 interface AccountPageProps {
-  session: AuthSession | null;
-  onOpenAuth: () => void;
-  onLogout: () => void;
+  session: GuestSession | null;
+  onUpdateSession: (updated: GuestSession) => void;
   onSelectRoom: (roomCode: string) => void;
   activeRoomCode: string | null;
   onNavigate: (page: any) => void;
-  onClearAllData?: () => void;
 }
+
+const AVAILABLE_ROLES = [
+  'Researcher Evaluator',
+  'Lead Developer / Architect',
+  'Systems Analyst',
+  'UI/UX Designer',
+  'QA / Testing Specialist',
+  'Database Administrator',
+  'Faculty Adviser / Panelist',
+  'Student Observer'
+];
 
 export const AccountPage: React.FC<AccountPageProps> = ({
   session,
-  onOpenAuth,
-  onLogout,
+  onUpdateSession,
   onSelectRoom,
   activeRoomCode,
-  onNavigate,
-  onClearAllData
+  onNavigate
 }) => {
-  const user = session?.user;
-  const userRooms = user ? getUserRooms(user.id) : [];
+  const [nickname, setNickname] = useState(session?.nickname || '');
+  const [role, setRole] = useState(session?.role || 'Researcher Evaluator');
+  const [selectedColor, setSelectedColor] = useState(session?.avatarColor || AVATAR_COLORS[0]);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const userRooms = session ? getUserRooms(session.id) : [];
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    if (!nickname.trim()) {
+      setErrorMsg('Nickname cannot be empty.');
+      return;
+    }
+
+    try {
+      const updated = saveGuestSession(nickname.trim(), role, selectedColor);
+      onUpdateSession(updated);
+      setSaveSuccess(true);
+
+      // Colorful burst
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#0071e3', '#34c759', '#ff9500', '#af52de']
+      });
+
+      setTimeout(() => setSaveSuccess(false), 2500);
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Failed to update profile.');
+    }
+  };
+
+  const handleResetSession = () => {
+    if (confirm('Clear current guest session and choose a new nickname?')) {
+      clearGuestSession();
+      setNickname('');
+      setRole('Researcher Evaluator');
+      onNavigate('home');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] pb-24 px-4 sm:px-6 max-w-4xl mx-auto pt-6 selection:bg-[#0071e3] selection:text-white">
@@ -46,105 +93,168 @@ export const AccountPage: React.FC<AccountPageProps> = ({
       <div className="flex items-center justify-between mb-6">
         <div>
           <button
-            onClick={() => onNavigate('dashboard')}
+            onClick={() => onNavigate(activeRoomCode ? 'dashboard' : 'home')}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#0071e3] transition-colors cursor-pointer mb-2"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Dashboard</span>
+            <span>{activeRoomCode ? 'Back to Dashboard' : 'Back to Home'}</span>
           </button>
 
           <h1 className="text-2xl sm:text-3xl font-black text-[#1d1d1f] tracking-tight">
-            Researcher Account & Profile
+            Guest Profile & Session Settings
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
-            Manage your evaluation profile and review your saved evaluation rooms.
+            Persistent guest session. All evaluation responses and saved rooms are encrypted client-side.
           </p>
         </div>
 
         {session && (
           <button
-            onClick={onLogout}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer"
+            onClick={handleResetSession}
+            title="Switch Evaluator Nickname"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-black/[0.08] bg-white text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer shadow-2xs"
           >
-            <LogOut className="h-3.5 w-3.5" />
-            <span>Sign Out</span>
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Switch Nickname</span>
           </button>
         )}
       </div>
 
       <div className="space-y-6">
-        {/* Profile Card */}
+        {/* Guest Profile & Customization Card */}
         <div className="rounded-[28px] border border-black/[0.08] bg-white p-6 sm:p-8 shadow-xs">
-          {session ? (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          <form onSubmit={handleSaveProfile} className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+              {/* Dynamic Avatar */}
               <div
                 className={clsx(
-                  "flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl text-2xl font-black text-white shadow-md",
-                  user?.avatarColor || 'bg-[#0071e3]'
+                  "flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl text-3xl font-black text-white shadow-md transition-all",
+                  selectedColor
                 )}
               >
-                {user?.name.slice(0, 2).toUpperCase()}
+                {nickname.trim() ? nickname.trim().slice(0, 2).toUpperCase() : 'GU'}
               </div>
 
-              <div className="space-y-1.5 flex-1 min-w-0">
+              {/* Avatar Color Picker */}
+              <div className="space-y-2 flex-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Choose Avatar Theme Color:
+                </label>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-black text-[#1d1d1f] truncate">
-                    {user?.name}
-                  </h2>
-                  <span className="rounded-full bg-blue-50 border border-blue-200 px-3 py-0.5 text-xs font-bold text-[#0071e3]">
-                    {user?.role}
-                  </span>
+                  {AVATAR_COLORS.map((colorClass) => {
+                    const isSelected = selectedColor === colorClass;
+                    return (
+                      <button
+                        key={colorClass}
+                        type="button"
+                        onClick={() => setSelectedColor(colorClass)}
+                        className={clsx(
+                          "h-8 w-8 rounded-full transition-all cursor-pointer flex items-center justify-center shadow-xs",
+                          colorClass,
+                          isSelected
+                            ? "ring-3 ring-black/20 scale-110 shadow-md"
+                            : "opacity-80 hover:opacity-100 hover:scale-105"
+                        )}
+                      >
+                        {isSelected && <Check className="h-4 w-4 text-white stroke-[3]" />}
+                      </button>
+                    );
+                  })}
                 </div>
-
-                <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{user?.email}</span>
-                </p>
-
-                <p className="text-[11px] text-slate-400">
-                  Account synchronized with browser storage & cloud KV database.
-                </p>
               </div>
             </div>
-          ) : (
-            <div className="text-center py-6 space-y-4">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[#0071e3]">
-                <User className="h-7 w-7" />
+
+            {/* Inputs: Nickname & Role */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
+              <div>
+                <label className="block text-xs font-bold text-[#1d1d1f] mb-1.5">
+                  Guest Nickname <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="Enter your evaluator nickname..."
+                    className="w-full rounded-xl border border-black/[0.1] bg-[#fbfbfd] p-3 pl-9 text-sm font-semibold focus:bg-white focus:border-[#0071e3] focus:outline-none transition-all"
+                  />
+                  <User className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                </div>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-[#1d1d1f]">Guest Mode Active</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Create an account or sign in to save your evaluation rooms and resume them from any browser session.
-                </p>
+
+              <div>
+                <label className="block text-xs font-bold text-[#1d1d1f] mb-1.5">
+                  Your Role in Evaluation
+                </label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full rounded-xl border border-black/[0.1] bg-[#fbfbfd] p-3 text-sm font-semibold focus:bg-white focus:border-[#0071e3] focus:outline-none transition-all cursor-pointer"
+                >
+                  {AVAILABLE_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
               </div>
+            </div>
+
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-bold text-red-700">
+                {errorMsg}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-black/[0.05]">
+              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                <span>Session automatically saved to browser storage</span>
+              </div>
+
               <button
-                onClick={onOpenAuth}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#0071e3] text-white px-5 py-2.5 text-xs font-bold shadow-md shadow-blue-500/20 hover:bg-[#0077ed] transition-all cursor-pointer"
+                type="submit"
+                className={clsx(
+                  "min-h-[44px] px-6 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shadow-xs active:scale-[0.98]",
+                  saveSuccess
+                    ? "bg-emerald-600 text-white shadow-emerald-600/20"
+                    : "bg-[#0071e3] text-white shadow-blue-500/20 hover:bg-[#0077ed]"
+                )}
               >
-                <LogIn className="h-4 w-4" />
-                <span>Sign In or Create Account</span>
+                {saveSuccess ? (
+                  <>
+                    <Check className="h-4 w-4 stroke-[3]" />
+                    <span>Saved Successfully!</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    <span>Save Profile Changes</span>
+                  </>
+                )}
               </button>
             </div>
-          )}
+          </form>
         </div>
 
         {/* Saved Evaluation Rooms */}
         <div className="rounded-[28px] border border-black/[0.08] bg-white p-6 sm:p-8 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-[#1d1d1f] uppercase tracking-wider text-xs text-slate-400">
-              My Saved Evaluation Rooms ({userRooms.length})
+            <h3 className="font-extrabold text-[#1d1d1f] uppercase tracking-wider text-xs text-slate-400">
+              My Visited Evaluation Rooms ({userRooms.length})
             </h3>
-            <span className="text-[11px] text-slate-400">
-              Encrypted AES-256
+            <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
+              <Lock className="h-3 w-3 text-emerald-600" />
+              AES-256 Encrypted
             </span>
           </div>
 
           {userRooms.length === 0 ? (
             <div className="p-8 text-center rounded-2xl bg-black/[0.02] border border-dashed border-black/[0.1] text-xs text-slate-500 space-y-2">
               <DoorOpen className="h-8 w-8 mx-auto text-slate-400 stroke-1" />
-              <p className="font-semibold text-slate-700">No saved evaluation rooms yet</p>
-              <p className="text-[11px] text-slate-400">
-                When you create or join rooms with a 6-character code while signed in, they will be cataloged here for instant 1-click access.
+              <p className="font-semibold text-slate-700">No rooms in history yet</p>
+              <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                Evaluation rooms you create or join with your Room Code are remembered here so you can re-enter them anytime.
               </p>
             </div>
           ) : (
@@ -214,30 +324,6 @@ export const AccountPage: React.FC<AccountPageProps> = ({
             </div>
           )}
         </div>
-
-        {/* Data Management & Danger Zone */}
-        {onClearAllData && (
-          <div className="rounded-[28px] border border-red-200 bg-red-50/40 p-6 sm:p-8 space-y-3">
-            <div className="flex items-center gap-2 text-red-700">
-              <Trash2 className="h-4 w-4" />
-              <h3 className="text-xs font-black uppercase tracking-wider">
-                Data Management & Reset Slate
-              </h3>
-            </div>
-            <p className="text-xs text-red-900/80 leading-relaxed">
-              Need to clear all evaluation data? This will wipe your active room, local evaluations, cached accounts, and reset the entire app to a 100% empty slate.
-            </p>
-            <div className="pt-1">
-              <button
-                onClick={onClearAllData}
-                className="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white px-4 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-xs"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Clear All Data & Reset App</span>
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

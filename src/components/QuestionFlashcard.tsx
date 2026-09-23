@@ -16,6 +16,58 @@ interface QuestionFlashcardProps {
   readOnly?: boolean;
 }
 
+const OPTION_THEMES: Record<
+  number,
+  {
+    selectedCard: string;
+    badgeSelected: string;
+    titleSelected: string;
+    indicatorSelected: string;
+    popClass: string;
+  }
+> = {
+  1: {
+    selectedCard:
+      'border-rose-500 bg-gradient-to-r from-rose-50/90 to-rose-50/40 text-[#1d1d1f] shadow-md shadow-rose-500/15 ring-2 ring-rose-500/20',
+    badgeSelected: 'bg-rose-500 text-white shadow-xs scale-105',
+    titleSelected: 'text-rose-600',
+    indicatorSelected: 'border-rose-500 bg-rose-500 text-white scale-105',
+    popClass: 'animate-option-pop-1'
+  },
+  2: {
+    selectedCard:
+      'border-orange-500 bg-gradient-to-r from-orange-50/90 to-orange-50/40 text-[#1d1d1f] shadow-md shadow-orange-500/15 ring-2 ring-orange-500/20',
+    badgeSelected: 'bg-orange-500 text-white shadow-xs scale-105',
+    titleSelected: 'text-orange-600',
+    indicatorSelected: 'border-orange-500 bg-orange-500 text-white scale-105',
+    popClass: 'animate-option-pop-2'
+  },
+  3: {
+    selectedCard:
+      'border-amber-500 bg-gradient-to-r from-amber-50/90 to-amber-50/40 text-[#1d1d1f] shadow-md shadow-amber-500/15 ring-2 ring-amber-500/20',
+    badgeSelected: 'bg-amber-500 text-white shadow-xs scale-105',
+    titleSelected: 'text-amber-700',
+    indicatorSelected: 'border-amber-500 bg-amber-500 text-white scale-105',
+    popClass: 'animate-option-pop-3'
+  },
+  4: {
+    selectedCard:
+      'border-emerald-500 bg-gradient-to-r from-emerald-50/90 to-emerald-50/40 text-[#1d1d1f] shadow-md shadow-emerald-500/15 ring-2 ring-emerald-500/20',
+    badgeSelected: 'bg-emerald-500 text-white shadow-xs scale-105',
+    titleSelected: 'text-emerald-600',
+    indicatorSelected: 'border-emerald-500 bg-emerald-500 text-white scale-105',
+    popClass: 'animate-option-pop-4'
+  },
+  5: {
+    selectedCard:
+      'border-indigo-600 bg-gradient-to-r from-indigo-50/90 to-indigo-50/40 text-[#1d1d1f] shadow-md shadow-indigo-500/15 ring-2 ring-indigo-500/20',
+    badgeSelected: 'bg-indigo-600 text-white shadow-xs scale-105',
+    titleSelected: 'text-indigo-600',
+    indicatorSelected: 'border-indigo-600 bg-indigo-600 text-white scale-105',
+    popClass: 'animate-option-pop-5'
+  }
+};
+
 export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
   question,
   currentIndex,
@@ -98,6 +150,7 @@ export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
           const isSelected = currentScore === opt.point;
           const isPopped = poppedPoint === opt.point;
           const anchor = MASTER_LIKERT_ANCHORS.find((a) => a.point === opt.point);
+          const theme = OPTION_THEMES[opt.point] || OPTION_THEMES[3];
 
           return (
             <button
@@ -107,9 +160,9 @@ export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
               onClick={() => handleChoiceClick(opt.point)}
               className={clsx(
                 "group relative w-full text-left rounded-2xl p-4 sm:p-5 border-2 transition-all cursor-pointer flex items-center justify-between gap-4 active:scale-[0.98]",
-                isPopped && "animate-option-pop",
+                isPopped && theme.popClass,
                 isSelected
-                  ? "border-[#0071e3] bg-gradient-to-r from-blue-50/90 to-blue-50/40 text-[#1d1d1f] shadow-md shadow-blue-500/10"
+                  ? theme.selectedCard
                   : "border-black/[0.07] bg-white hover:border-black/[0.18] hover:bg-[#fbfbfd]"
               )}
             >
@@ -119,7 +172,7 @@ export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
                   className={clsx(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-mono text-sm font-black transition-all",
                     isSelected
-                      ? "bg-[#0071e3] text-white shadow-xs scale-105"
+                      ? theme.badgeSelected
                       : "bg-black/[0.05] text-slate-700 group-hover:bg-black/[0.1]"
                   )}
                 >
@@ -131,7 +184,7 @@ export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
                     <span
                       className={clsx(
                         "text-sm sm:text-base font-extrabold tracking-tight",
-                        isSelected ? "text-[#0071e3]" : "text-[#1d1d1f]"
+                        isSelected ? theme.titleSelected : "text-[#1d1d1f]"
                       )}
                     >
                       {anchor?.label || `Option [${opt.point}]`}
@@ -154,7 +207,7 @@ export const QuestionFlashcard: React.FC<QuestionFlashcardProps> = ({
                 className={clsx(
                   "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all",
                   isSelected
-                    ? "border-[#0071e3] bg-[#0071e3] text-white scale-105"
+                    ? theme.indicatorSelected
                     : "border-black/[0.15] bg-transparent opacity-0 group-hover:opacity-40"
                 )}
               >

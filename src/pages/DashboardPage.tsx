@@ -1,6 +1,6 @@
 import React from 'react';
 import { CapstoneTitle, Researcher } from '../types/scoring';
-import { AuthSession } from '../types/auth';
+import { GuestSession, AuthSession } from '../types/auth';
 import { calculateTitleSummary } from '../utils/calculator';
 import {
   Layers,
@@ -18,8 +18,7 @@ import {
   RotateCcw,
   DoorOpen,
   Lock,
-  Plus,
-  Trash2
+  Plus
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -28,12 +27,11 @@ interface DashboardPageProps {
   titles: CapstoneTitle[];
   researchers: Researcher[];
   activeResearcherId: string;
-  session: AuthSession | null;
+  session: GuestSession | AuthSession | null;
   onSelectTitleToScore: (titleId: string) => void;
   onSelectTitleToViewResults: (titleId: string) => void;
   onNavigate: (page: any) => void;
   onExitRoom: () => void;
-  onClearAllData?: () => void;
   isSyncing: boolean;
   onSync: () => void;
 }
@@ -48,7 +46,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onSelectTitleToViewResults,
   onNavigate,
   onExitRoom,
-  onClearAllData,
   isSyncing,
   onSync
 }) => {
@@ -76,12 +73,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
               <button
                 onClick={handleCopyCode}
-                className="inline-flex items-center gap-1 rounded-xl border border-black/[0.08] bg-white px-2.5 py-1 text-xs font-bold text-slate-700 hover:text-[#0071e3] transition-colors cursor-pointer"
+                className={clsx(
+                  "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
+                  copied
+                    ? "animate-copy-glow bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-400/40"
+                    : "border-black/[0.08] bg-white text-slate-700 hover:text-[#0071e3] hover:border-[#0071e3]/30"
+                )}
               >
                 {copied ? (
                   <>
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="text-emerald-700">Copied</span>
+                    <Check className="h-3.5 w-3.5 text-emerald-600 stroke-[3]" />
+                    <span>Copied Room Code!</span>
                   </>
                 ) : (
                   <>
@@ -132,16 +134,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             >
               <DoorOpen className="h-4 w-4" />
             </button>
-
-            {onClearAllData && (
-              <button
-                onClick={onClearAllData}
-                title="Clear all data and reset"
-                className="flex items-center gap-1.5 rounded-2xl border border-red-200 bg-white p-2.5 text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer shadow-2xs"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
           </div>
         </div>
       </div>

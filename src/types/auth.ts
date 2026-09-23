@@ -15,41 +15,16 @@ export interface UserRoomRecord {
   titleCount: number;
 }
 
-export interface User {
+export interface GuestSession {
   id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  passwordHash: string;
+  nickname: string;
+  role: string;
   avatarColor: string;
   createdAt: string;
-  rooms: UserRoomRecord[];
 }
 
-export interface AuthSession {
-  token: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: UserRole;
-    avatarColor: string;
-  };
-  expiresAt: string;
-}
-
-export interface SignUpFormData {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  role: UserRole;
-}
-
-export interface LoginFormData {
-  email: string;
-  password: string;
-}
+// For compatibility across components
+export type AuthSession = GuestSession;
 
 export const AVAILABLE_ROLES: UserRole[] = [
   'Lead Developer',

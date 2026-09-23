@@ -74,6 +74,54 @@
   100% { transform: scale(1); }
 }
 
+/* Vibrant Colorful Option Pops */
+@keyframes optionPop1 {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.96); box-shadow: 0 0 0 4px rgba(255, 45, 85, 0.4); }
+  75% { transform: scale(1.03); box-shadow: 0 0 16px 2px rgba(255, 45, 85, 0.35); }
+  100% { transform: scale(1); }
+}
+
+@keyframes optionPop2 {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.96); box-shadow: 0 0 0 4px rgba(255, 149, 0, 0.4); }
+  75% { transform: scale(1.03); box-shadow: 0 0 16px 2px rgba(255, 149, 0, 0.35); }
+  100% { transform: scale(1); }
+}
+
+@keyframes optionPop3 {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.96); box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.4); }
+  75% { transform: scale(1.03); box-shadow: 0 0 16px 2px rgba(255, 204, 0, 0.35); }
+  100% { transform: scale(1); }
+}
+
+@keyframes optionPop4 {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.96); box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.4); }
+  75% { transform: scale(1.03); box-shadow: 0 0 16px 2px rgba(52, 199, 89, 0.35); }
+  100% { transform: scale(1); }
+}
+
+@keyframes optionPop5 {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.96); box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.4); }
+  75% { transform: scale(1.03); box-shadow: 0 0 16px 2px rgba(88, 86, 214, 0.45); }
+  100% { transform: scale(1); }
+}
+
+@keyframes rainbowShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes codeCopyGlow {
+  0% { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.6); }
+  50% { box-shadow: 0 0 20px 4px rgba(52, 199, 89, 0.5); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0); }
+}
+
 @keyframes toastSlideIn {
   0% {
     opacity: 0;
@@ -100,6 +148,35 @@
 
 .animate-option-pop {
   animation: optionPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-option-pop-1 {
+  animation: optionPop1 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-option-pop-2 {
+  animation: optionPop2 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-option-pop-3 {
+  animation: optionPop3 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-option-pop-4 {
+  animation: optionPop4 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-option-pop-5 {
+  animation: optionPop5 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-rainbow {
+  background-size: 200% 200%;
+  animation: rainbowShift 4s ease infinite;
+}
+
+.animate-copy-glow {
+  animation: codeCopyGlow 0.8s ease-out forwards;
 }
 
 .animate-toast {

@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { CapstoneTitle, Researcher } from '../types/scoring';
-import { AuthSession } from '../types/auth';
+import React, { useState, useEffect } from 'react';
+import { GuestSession } from '../types/auth';
 import { ActivePage } from '../types/navigation';
 import { subscribeSyncStatus, CloudSyncStatus } from '../utils/cloudDb';
 import {
@@ -10,17 +9,9 @@ import {
   Play,
   Settings,
   User,
-  LogIn,
   Menu,
-  RotateCcw,
-  Download,
-  Upload,
-  Sparkles,
-  ChevronDown,
   Cloud,
-  CheckCircle2,
-  Loader2,
-  Trash2
+  Loader2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -28,14 +19,8 @@ interface NavbarProps {
   activePage: ActivePage;
   onNavigate: (page: ActivePage) => void;
   activeRoomCode: string | null;
-  session: AuthSession | null;
-  onOpenAuth: () => void;
+  session: GuestSession | null;
   onOpenMobileDrawer: () => void;
-  onLoadSampleData: () => void;
-  onResetData: () => void;
-  onClearAllData?: () => void;
-  onExportJSON: () => void;
-  onImportJSON: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -43,39 +28,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigate,
   activeRoomCode,
   session,
-  onOpenAuth,
-  onOpenMobileDrawer,
-  onLoadSampleData,
-  onResetData,
-  onClearAllData,
-  onExportJSON,
-  onImportJSON
+  onOpenMobileDrawer
 }) => {
-  const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<CloudSyncStatus>({
     state: 'idle',
     lastSyncedAt: null,
     message: 'Cloud DB Ready'
   });
 
-  const actionsRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     const unsubscribe = subscribeSyncStatus((status) => {
       setSyncStatus(status);
     });
     return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
-        setIsActionsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   return (
@@ -95,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onNavigate('home')}
             className="flex items-center gap-2 cursor-pointer group text-left"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0071e3] text-white shadow-sm group-hover:scale-105 transition-transform">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071e3] to-[#47a3ff] text-white shadow-sm group-hover:scale-105 transition-transform">
               <Scale className="h-4 w-4" />
             </div>
             <div>
@@ -182,17 +147,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={() => onNavigate('account')}
             className={clsx(
-              "px-3.5 py-1.5 rounded-xl transition-all cursor-pointer",
+              "px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1",
               activePage === 'account'
                 ? "bg-white text-[#1d1d1f] shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             )}
           >
-            Account
+            <User className="h-3.5 w-3.5 text-purple-600" />
+            <span>Profile</span>
           </button>
         </nav>
 
-        {/* Right Action Buttons */}
+        {/* Right Action: Cloud Sync Badge & Guest Nickname Pill */}
         <div className="flex items-center gap-2">
           {/* Live Cloud DB Sync Badge */}
           <div
@@ -218,127 +184,44 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </div>
 
-          {/* User Account Pill / Button */}
+          {/* Guest Nickname Pill */}
           {session ? (
             <button
               onClick={() => onNavigate('account')}
-              title="My Profile & Saved Rooms"
+              title="Guest Profile & Settings"
               className={clsx(
-                "flex items-center gap-2 rounded-2xl border px-2.5 py-1.5 transition-all cursor-pointer shadow-2xs",
+                "flex items-center gap-2 rounded-2xl border px-3 py-1.5 transition-all cursor-pointer shadow-2xs hover:scale-[1.02] active:scale-[0.98]",
                 activePage === 'account'
-                  ? "border-[#0071e3] bg-blue-50/70"
+                  ? "border-[#0071e3] bg-blue-50/80 ring-2 ring-blue-500/20"
                   : "border-black/[0.08] bg-white hover:border-black/[0.15]"
               )}
             >
               <div
                 className={clsx(
-                  "flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-black text-white",
-                  session.user.avatarColor || 'bg-[#0071e3]'
+                  "flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-black text-white shadow-xs",
+                  session.avatarColor || 'bg-[#0071e3]'
                 )}
               >
-                {session.user.name.slice(0, 2).toUpperCase()}
+                {session.nickname.slice(0, 1).toUpperCase()}
               </div>
-              <div className="hidden sm:block text-left max-w-[100px] truncate leading-tight">
-                <div className="text-xs font-bold text-[#1d1d1f] truncate">
-                  {session.user.name}
+              <div className="text-left leading-tight">
+                <div className="text-xs font-bold text-[#1d1d1f] max-w-[110px] truncate">
+                  {session.nickname}
                 </div>
-                <div className="text-[10px] text-slate-400 font-medium truncate">
-                  {session.user.role}
+                <div className="text-[10px] text-slate-400 font-medium truncate max-w-[110px]">
+                  {session.role}
                 </div>
               </div>
             </button>
           ) : (
             <button
-              onClick={onOpenAuth}
-              title="Sign In or Register"
-              className="flex items-center gap-1.5 rounded-2xl bg-[#0071e3] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#0077ed] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+              onClick={() => onNavigate('account')}
+              className="flex items-center gap-1.5 rounded-2xl border border-black/[0.08] bg-white hover:bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition-all cursor-pointer shadow-2xs"
             >
-              <LogIn className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Sign In</span>
+              <User className="h-3.5 w-3.5 text-slate-500" />
+              <span>Guest User</span>
             </button>
           )}
-
-          {/* More actions dropdown */}
-          <div className="relative" ref={actionsRef}>
-            <button
-              onClick={() => setIsActionsOpen(!isActionsOpen)}
-              className="flex items-center gap-1 rounded-2xl border border-black/[0.08] bg-white p-2 text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
-              title="More Actions"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </button>
-
-            {isActionsOpen && (
-              <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-black/[0.08] bg-white/95 backdrop-blur-xl p-2 shadow-2xl animate-in fade-in z-50">
-                <button
-                  onClick={() => {
-                    onLoadSampleData();
-                    setIsActionsOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition-colors cursor-pointer"
-                >
-                  <Sparkles className="h-4 w-4 text-purple-600" />
-                  <span>Load Benchmark (9 Titles)</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    onExportJSON();
-                    setIsActionsOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  <Download className="h-4 w-4 text-slate-500" />
-                  <span>Backup Evaluations (JSON)</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    fileInputRef.current?.click();
-                    setIsActionsOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  <Upload className="h-4 w-4 text-slate-500" />
-                  <span>Import Evaluations (JSON)</span>
-                </button>
-
-                <div className="my-1 border-t border-black/[0.06]" />
-
-                <button
-                  onClick={() => {
-                    onResetData();
-                    setIsActionsOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="h-4 w-4 text-amber-500" />
-                  <span>Reset Evaluations in Room</span>
-                </button>
-
-                {onClearAllData && (
-                  <button
-                    onClick={() => {
-                      onClearAllData();
-                      setIsActionsOpen(false);
-                    }}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                    <span>Clear All Data (Wipe Everything)</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={onImportJSON}
-            accept=".json"
-            className="hidden"
-          />
         </div>
       </div>
     </header>

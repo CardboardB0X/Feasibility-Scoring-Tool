@@ -1,31 +1,25 @@
 import React, { useState } from 'react';
 import { CapstoneTitle, Researcher } from '../types/scoring';
-import { AuthSession } from '../types/auth';
+import { GuestSession } from '../types/auth';
 import { generateRoomCode, encryptData, decryptData, formatRoomCode } from '../utils/crypto';
 import { saveRoomToCloud, fetchRoomFromCloud } from '../utils/roomApi';
-import { SAMPLE_BENCHMARK_TITLES } from '../data/sampleData';
+import { saveGuestSession } from '../utils/auth';
+import confetti from 'canvas-confetti';
 import {
   Scale,
-  Sparkles,
   KeyRound,
   Plus,
   ArrowRight,
   ShieldCheck,
-  Users,
   Lock,
-  Layers,
-  CheckCircle2,
   AlertCircle,
   FileText,
-  BarChart3,
-  HelpCircle,
-  Trophy,
-  Trash2
+  User
 } from 'lucide-react';
 import clsx from 'clsx';
 
 interface HomePageProps {
-  session: AuthSession | null;
+  session: GuestSession | null;
   activeRoomCode: string | null;
   onStartRoom: (
     roomCode: string,
@@ -35,8 +29,7 @@ interface HomePageProps {
     groupName?: string
   ) => void;
   onNavigate: (page: any) => void;
-  onOpenAuth: () => void;
-  onClearAllData?: () => void;
+  onSessionUpdate: (newSession: GuestSession) => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
@@ -44,29 +37,40 @@ export const HomePage: React.FC<HomePageProps> = ({
   activeRoomCode,
   onStartRoom,
   onNavigate,
-  onOpenAuth,
-  onClearAllData
+  onSessionUpdate
 }) => {
-  const [activeTab, setActiveTab] = useState<'CREATE' | 'JOIN' | 'DEMO'>('CREATE');
+  const [activeTab, setActiveTab] = useState<'CREATE' | 'JOIN'>('CREATE');
 
   // Create Room State
   const [groupName, setGroupName] = useState('');
-  const [evaluatorName, setEvaluatorName] = useState(session ? session.user.name : '');
+  const [evaluatorName, setEvaluatorName] = useState(session ? session.nickname : '');
   const [evaluatorRole, setEvaluatorRole] = useState(
-    session ? session.user.role : 'Lead Dev / Systems Architect'
+    session ? session.role : 'Lead Developer'
   );
+  const [createError, setCreateError] = useState<string | null>(null);
   const [titleCount, setTitleCount] = useState<number>(3);
   const [titleInputs, setTitleInputs] = useState<string[]>(['', '', '']);
 
   // Join Room State
   const [joinCode, setJoinCode] = useState('');
-  const [joinName, setJoinName] = useState(session ? session.user.name : '');
+  const [joinName, setJoinName] = useState(session ? session.nickname : '');
   const [joinRole, setJoinRole] = useState(
-    session ? session.user.role : 'Researcher Evaluator'
+    session ? session.role : 'Researcher Evaluator'
   );
   const [joinError, setJoinError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  // Trigger colorful action animation burst
+  const triggerColorfulBurst = () => {
+    confetti({
+      particleCount: 70,
+      spread: 70,
+      origin: { y: 0.65 },
+      colors: ['#0071e3', '#34c759', '#ff9500', '#ff2d55', '#af52de', '#ffd60a'],
+      disableForReducedMotion: true
+    });
+  };
 
   const handleTitleCountChange = (count: number) => {
     const clamped = Math.max(2, Math.min(9, count));
@@ -89,20 +93,25 @@ export const HomePage: React.FC<HomePageProps> = ({
   };
 
   const handleCreateRoom = async () => {
+    setCreateError(null);
     if (!evaluatorName.trim()) {
-      alert('Please enter your evaluator name.');
+      setCreateError('A nickname is required to create an evaluation room.');
       return;
     }
 
     setIsCreating(true);
     try {
+      // Save/persist guest session
+      const savedSession = saveGuestSession(evaluatorName.trim(), evaluatorRole.trim());
+      onSessionUpdate(savedSession);
+
       const roomCode = generateRoomCode();
-      const evaluatorId = session ? session.user.id : `R-${Date.now()}`;
+      const evaluatorId = savedSession.id;
       const newEvaluator: Researcher = {
         id: evaluatorId,
-        name: evaluatorName.trim(),
-        role: evaluatorRole.trim() || 'Evaluator',
-        avatarColor: session ? session.user.avatarColor : 'bg-[#0071e3]'
+        name: savedSession.nickname,
+        role: savedSession.role,
+        avatarColor: savedSession.avatarColor
       };
 
       const newTitles: CapstoneTitle[] = titleInputs.map((titleText, idx) => ({
@@ -126,11 +135,14 @@ export const HomePage: React.FC<HomePageProps> = ({
       const encrypted = await encryptData(roomPayload, roomCode);
       await saveRoomToCloud(roomCode, encrypted);
 
+      // Colorful celebration burst!
+      triggerColorfulBurst();
+
       onStartRoom(roomCode, newTitles, newEvaluator, true, finalGroupName);
       onNavigate('dashboard');
     } catch (err) {
       console.error(err);
-      alert('Failed to initialize encrypted room.');
+      setCreateError('Failed to initialize encrypted room.');
     } finally {
       setIsCreating(false);
     }
@@ -138,12 +150,12 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   const handleJoinRoom = async () => {
     setJoinError(null);
-    if (!joinCode.trim()) {
-      setJoinError('Please enter a room code.');
+    if (!joinName.trim()) {
+      setJoinError('A nickname is required to join an evaluation room.');
       return;
     }
-    if (!joinName.trim()) {
-      setJoinError('Please enter your name.');
+    if (!joinCode.trim()) {
+      setJoinError('Please enter a room code.');
       return;
     }
 
@@ -151,6 +163,10 @@ export const HomePage: React.FC<HomePageProps> = ({
     setIsJoining(true);
 
     try {
+      // Save/persist guest session
+      const savedSession = saveGuestSession(joinName.trim(), joinRole.trim());
+      onSessionUpdate(savedSession);
+
       const encrypted = await fetchRoomFromCloud(formattedCode);
       if (!encrypted) {
         setJoinError(`Room "${formattedCode}" was not found. Please check the code.`);
@@ -167,7 +183,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       const roomData = await decryptData<DecryptedRoom>(encrypted, formattedCode);
       const existing = roomData.researchers.find(
-        (r) => r.name.toLowerCase() === joinName.trim().toLowerCase()
+        (r) => r.name.toLowerCase() === savedSession.nickname.toLowerCase()
       );
 
       let currentEvaluator: Researcher;
@@ -176,12 +192,11 @@ export const HomePage: React.FC<HomePageProps> = ({
       if (existing) {
         currentEvaluator = existing;
       } else {
-        const newId = session ? session.user.id : `R-${Date.now()}`;
         currentEvaluator = {
-          id: newId,
-          name: joinName.trim(),
-          role: joinRole.trim() || 'Evaluator',
-          avatarColor: session ? session.user.avatarColor : 'bg-[#34c759]'
+          id: savedSession.id,
+          name: savedSession.nickname,
+          role: savedSession.role,
+          avatarColor: savedSession.avatarColor
         };
         updatedResearchers.push(currentEvaluator);
 
@@ -193,6 +208,9 @@ export const HomePage: React.FC<HomePageProps> = ({
         await saveRoomToCloud(formattedCode, reEncrypted);
       }
 
+      // Colorful celebration burst!
+      triggerColorfulBurst();
+
       onStartRoom(formattedCode, roomData.titles, currentEvaluator, false, roomData.groupName);
       onNavigate('dashboard');
     } catch (err) {
@@ -203,22 +221,10 @@ export const HomePage: React.FC<HomePageProps> = ({
     }
   };
 
-  const handleLoadDemo = () => {
-    const demoCode = 'CAP-DEMO';
-    const demoEvaluator: Researcher = {
-      id: 'R1',
-      name: session ? session.user.name : 'Lead Dev (Demo Evaluator)',
-      role: session ? session.user.role : 'Core Systems Architect',
-      avatarColor: 'bg-[#0071e3]'
-    };
-    onStartRoom(demoCode, SAMPLE_BENCHMARK_TITLES, demoEvaluator, true, 'Benchmark Sample Demo');
-    onNavigate('dashboard');
-  };
-
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col selection:bg-[#0071e3] selection:text-white pb-20">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 px-4 sm:px-6">
+      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-20 px-4 sm:px-6">
         <div className="mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-200/80 px-3.5 py-1 text-xs font-bold text-[#0071e3] mb-6 shadow-2xs">
             <Lock className="h-3.5 w-3.5" />
@@ -230,12 +236,12 @@ export const HomePage: React.FC<HomePageProps> = ({
           </h1>
 
           <p className="mt-5 text-base sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal">
-            Objective, closed-choice evaluation for student researchers. Grade <strong>2 to 9 candidate titles</strong> with flashcard questionnaires, instant consensus, and zero-spoiler scoring.
+            Objective, closed-choice evaluation for student researchers. Grade <strong>2 to 9 proposed titles</strong> with flashcard questionnaires, instant consensus, and zero-spoiler scoring.
           </p>
 
-          {/* Quick Action Pills if in active room */}
+          {/* Quick Action Pill if in active room */}
           {activeRoomCode && (
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 onClick={() => onNavigate('dashboard')}
                 className="flex items-center gap-2 rounded-2xl bg-[#0071e3] text-white px-5 py-2.5 text-xs font-bold shadow-md shadow-blue-500/20 hover:bg-[#0077ed] active:scale-[0.98] transition-all cursor-pointer"
@@ -243,16 +249,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <span>Return to Active Room ({activeRoomCode})</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
-
-              {onClearAllData && (
-                <button
-                  onClick={onClearAllData}
-                  className="flex items-center gap-1.5 rounded-2xl border border-red-200 bg-white text-red-600 hover:bg-red-50 px-4 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>Clear All Stored Data</span>
-                </button>
-              )}
             </div>
           )}
         </div>
@@ -261,7 +257,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* Main Start Hub Card */}
       <section className="px-4 sm:px-6 max-w-3xl mx-auto w-full mb-16">
         <div className="rounded-[32px] bg-white/95 backdrop-blur-2xl border border-black/[0.08] shadow-2xl overflow-hidden apple-spring">
-          {/* Segmented Control */}
+          {/* Segmented Control: CREATE & JOIN ONLY */}
           <div className="p-4 sm:p-6 border-b border-black/[0.06] bg-[#fbfbfd]">
             <div className="flex p-1 rounded-2xl bg-black/[0.05] border border-black/[0.04] text-xs font-semibold w-full">
               <button
@@ -289,19 +285,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <KeyRound className="h-3.5 w-3.5" />
                 <span>Join with Code</span>
               </button>
-
-              <button
-                onClick={() => setActiveTab('DEMO')}
-                className={clsx(
-                  "flex-1 min-h-[44px] py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5",
-                  activeTab === 'DEMO'
-                    ? "bg-white text-[#1d1d1f] shadow-xs font-bold"
-                    : "text-slate-600 hover:text-slate-900"
-                )}
-              >
-                <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-                <span>Demo Sample</span>
-              </button>
             </div>
           </div>
 
@@ -312,15 +295,18 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-[#1d1d1f] mb-1.5">
-                      Your Name / Role <span className="text-red-500">*</span>
+                      Your Nickname <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      value={evaluatorName}
-                      onChange={(e) => setEvaluatorName(e.target.value)}
-                      placeholder="e.g. Lead Dev or Maria"
-                      className="w-full rounded-xl border border-black/[0.1] bg-[#fbfbfd] p-3 text-base sm:text-sm font-semibold focus:bg-white focus:border-[#0071e3] focus:outline-none transition-all"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={evaluatorName}
+                        onChange={(e) => setEvaluatorName(e.target.value)}
+                        placeholder="e.g. Alex (Lead Dev)"
+                        className="w-full rounded-xl border border-black/[0.1] bg-[#fbfbfd] p-3 pl-9 text-base sm:text-sm font-semibold focus:bg-white focus:border-[#0071e3] focus:outline-none transition-all"
+                      />
+                      <User className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                    </div>
                   </div>
 
                   <div>
@@ -337,7 +323,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   </div>
                 </div>
 
-                {/* Candidate Titles Count */}
+                {/* Candidate Titles Count (2 to 9) */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-xs font-bold text-[#1d1d1f]">
@@ -388,14 +374,21 @@ export const HomePage: React.FC<HomePageProps> = ({
                   ))}
                 </div>
 
+                {createError && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>{createError}</span>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={handleCreateRoom}
                   disabled={isCreating}
-                  className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-2xl bg-[#0071e3] py-3.5 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:bg-[#0077ed] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0071e3] to-[#2563eb] py-3.5 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                 >
                   <ShieldCheck className="h-4 w-4" />
-                  <span>{isCreating ? 'Encrypting & Initializing...' : 'Create Encrypted Evaluation Room'}</span>
+                  <span>{isCreating ? 'Encrypting & Generating Code...' : 'Create Encrypted Evaluation Room'}</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -404,6 +397,22 @@ export const HomePage: React.FC<HomePageProps> = ({
             {/* TAB 2: JOIN */}
             {activeTab === 'JOIN' && (
               <div className="space-y-5 animate-in fade-in max-w-md mx-auto">
+                <div>
+                  <label className="block text-xs font-bold text-[#1d1d1f] mb-1.5">
+                    Your Nickname <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={joinName}
+                      onChange={(e) => setJoinName(e.target.value)}
+                      placeholder="e.g. Maria (QA Specialist)"
+                      className="w-full rounded-xl border border-black/[0.1] bg-[#fbfbfd] p-3 pl-9 text-base sm:text-sm font-semibold focus:bg-white focus:border-[#0071e3] focus:outline-none transition-all"
+                    />
+                    <User className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-[#1d1d1f] mb-1.5">
                     Room Code <span className="text-red-500">*</span>
@@ -421,19 +430,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#1d1d1f] mb-1.5">
-                    Your Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={joinName}
-                    onChange={(e) => setJoinName(e.target.value)}
-                    placeholder="e.g. Maria (Data Specialist)"
-                    className="w-full rounded-xl border border-black/[0.1] bg-[#fbfbfd] p-3 text-base sm:text-sm font-semibold focus:bg-white focus:border-[#0071e3] focus:outline-none transition-all"
-                  />
-                </div>
-
                 {joinError && (
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
                     <AlertCircle className="h-4 w-4 shrink-0" />
@@ -449,28 +445,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                 >
                   <KeyRound className="h-4 w-4 text-amber-400" />
                   <span>{isJoining ? 'Decrypting Room...' : 'Join Evaluation Room'}</span>
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-
-            {/* TAB 3: DEMO */}
-            {activeTab === 'DEMO' && (
-              <div className="space-y-4 animate-in fade-in text-center max-w-md mx-auto">
-                <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 text-xs text-purple-900 leading-relaxed text-left">
-                  <strong>9-Title Benchmark Dataset:</strong>
-                  <p className="mt-1 text-slate-600">
-                    Explore pre-evaluated projects across Computer Vision, IoT, Healthcare, and Robotics demonstrating Approved Finalists, Conditional Backups, and Red Line disqualification.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleLoadDemo}
-                  className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 py-3.5 text-sm font-bold text-white shadow-md shadow-purple-500/20 hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  <span>Launch Benchmark Demo (9 Titles)</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>

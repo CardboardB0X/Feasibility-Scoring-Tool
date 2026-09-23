@@ -56,15 +56,32 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
   const isAllAnswered = answeredCount === QUESTIONS.length;
   const progressPercent = Math.round((answeredCount / QUESTIONS.length) * 100);
 
-  // Trigger celebration confetti when opening completion modal
+  // Trigger colorful celebration confetti when opening completion modal
   useEffect(() => {
     if (isCompletionModalOpen) {
       try {
         confetti({
-          particleCount: 100,
-          spread: 80,
-          origin: { y: 0.6 }
+          particleCount: 120,
+          spread: 90,
+          origin: { y: 0.6 },
+          colors: ['#ff2d55', '#ff9500', '#ffcc00', '#34c759', '#0071e3', '#af52de']
         });
+        setTimeout(() => {
+          confetti({
+            particleCount: 60,
+            angle: 60,
+            spread: 60,
+            origin: { x: 0 },
+            colors: ['#ff2d55', '#34c759', '#0071e3', '#ffcc00']
+          });
+          confetti({
+            particleCount: 60,
+            angle: 120,
+            spread: 60,
+            origin: { x: 1 },
+            colors: ['#ff9500', '#34c759', '#af52de', '#0071e3']
+          });
+        }, 250);
       } catch (e) {}
     }
   }, [isCompletionModalOpen]);
@@ -203,9 +220,9 @@ export const QuestionnairePage: React.FC<QuestionnairePageProps> = ({
         </div>
 
         {/* Top Progress Bar */}
-        <div className="h-2 w-full rounded-full bg-black/[0.05] overflow-hidden mb-4">
+        <div className="h-2.5 w-full rounded-full bg-black/[0.05] overflow-hidden mb-4 p-[1px]">
           <div
-            className="h-full rounded-full bg-[#0071e3] transition-all duration-300"
+            className="h-full rounded-full bg-gradient-to-r from-[#0071e3] via-[#af52de] to-[#34c759] animate-rainbow transition-all duration-300 shadow-xs"
             style={{ width: `${((currentQuestionIndex + 1) / QUESTIONS.length) * 100}%` }}
           />
         </div>
